@@ -1,0 +1,32 @@
+{
+  "name": "phan-loai-sieu-toc",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "build": "npm run build -w apps/api && npm run build -w apps/web",
+    "db:generate": "npm run db:generate -w apps/api",
+    "db:migrate": "npm run db:migrate -w apps/api",
+    "db:seed": "npm run db:seed -w apps/api",
+    "db:setup": "npm run db:generate -w apps/api && npm run db:migrate -w apps/api && npm run db:seed -w apps/api",
+    "assets:slice": "node scripts/slice-assets.mjs",
+    "assets:bins": "node scripts/install-bins.mjs",
+    "assets:wide-bg": "node scripts/generate-game-wide-bg.mjs",
+    "quiz:import-docx": "node scripts/parse-quiz-docx.mjs",
+    "quiz:docx-to-excel": "node scripts/docx-to-quiz-excel.mjs",
+    "quiz:sanitize-json": "node scripts/sanitize-quiz-json.mjs",
+    "quiz:sanitize-db": "npm run db:generate -w apps/api && npx tsx apps/api/scripts/sanitize-quiz-db.ts",
+    "assets:reorganize": "node scripts/reorganize-items.mjs",
+    "assets:sync-manifest": "node scripts/sync-items-manifest.mjs",
+    "trash:sync-db": "npm run db:generate -w apps/api && npx tsx apps/api/scripts/sync-trash-manifest.ts",
+    "wheel:seed": "npx tsx apps/api/scripts/seed-wheel.ts",
+    "assets:transparent": "node scripts/remove-white-bg.mjs apps/web/public/assets/items/huu-co && node scripts/remove-white-bg.mjs apps/web/public/assets/items/tai-che && node scripts/remove-white-bg.mjs apps/web/public/assets/items/khac && node scripts/remove-white-bg.mjs apps/web/public/assets/bins"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "xlsx": "^0.18.5"
+  }
+}

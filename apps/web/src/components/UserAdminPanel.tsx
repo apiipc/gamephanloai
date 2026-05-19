@@ -1,0 +1,205 @@
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import { adminApi } from '../api/client';
+import { downloadUserTemplate, parseUserExcel } from '../admin/userExcel';
+import type { Role } from '../types';
+
+interface AdminClass {
+  id: string;
+  name: string;
+}
+
+interface UserAdminPanelProps {
+  users: { id: string; fullName: string; email: string; role: Role }[];
+  actorRole: Role;
+  onMessage: (msg: string) => void;
+  onChanged: () => void;
+}
+
+const ROLE_OPTIONS: { value: Role; label: string; hint: string }[] = [
+  { value: 'STUDENT', label: 'Học sinh (HS)', hint: 'Chơi game, quiz, vòng quay' },
+  { value: 'TEACHER', label: 'Giáo viên (GV)', hint: 'Xem HS lớp mình, quản quiz' },
+  { value: 'ORG_ADMIN', label: 'Quản trị trường', hint: 'Quản lý toàn trường' },
+  { value: 'SUPER_ADMIN', label: 'Super Admin', hint: 'Toàn hệ thống' },
+];
+
+export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserAdminPanelProps) {
+  const [classes, setClasses] = useState<AdminClass[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [excelError, setExcelError] = useState('');
+  const [formRole, setFormRole] = useState<Role>('STUDENT');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    adminApi
+      .classes()
+      .then((list) => setClasses(list as AdminClass[]))
+      .catch(() => setClasses([]));
+  }, []);
+
+  const allowedRoles = ROLE_OPTIONS.filter((r) => {
+    if (actorRole === 'TEACHER') return r.value === 'STUDENT';
+    if (actorRole === 'ORG_ADMIN') return r.value !== 'SUPER_ADMIN';
+    return true;
+  });
+
+  const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    setSaving(true);
+    try {
+      await adminApi.createUser({
+        fullName: String(fd.get('fullName')).trim(),
+        email: String(fd.get('email')).trim().toLowerCase(),
+        password: String(fd.get('password')),
+        role: fd.get('role') as Role,
+        classId: String(fd.get('classId') || '') || undefined,
+      });
+      e.currentTarget.reset();
+      setFormRole('STUDENT');
+      onMessage('Đã tạo tài khoản');
+      onChanged();
+    } catch (err) {
+      onMessage(err instanceof Error ? err.message : 'Không tạo được');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleExcel = async (file: File) => {
+    setExcelError('');
+    setUploading(true);
+    try {
+      const items = await parseUserExcel(file);
+      const res = await adminApi.importUsers(items);
+      const errLines = res.errors
+        .slice(0, 3)
+        .map((x) => `Dòng ${x.row} (${x.email}): ${x.message}`)
+        .join(' · ');
+      onMessage(
+        `Import: ${res.created}/${res.total} thành công` +
+          (res.failed ? ` — ${res.failed} lỗi${errLines ? `: ${errLines}` : ''}` : ''),
+      );
+      onChanged();
+    } catch (e) {
+      setExcelError(e instanceof Error ? e.message : 'Không đọc được file');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="user-admin">
+      <div className="card user-admin__block">
+        <h3 className="user-admin__title">➕ Tạo tài khoản mới</h3>
+        <p className="user-admin__desc">
+          Tạo một học sinh / giáo viên / quản trị. Mật khẩu tối thiểu 6 ký tự.
+        </p>
+        <form className="user-admin__form" onSubmit={handleCreate}>
+          <label className="user-admin__field">
+            <span>Họ tên *</span>
+            <input name="fullName" required placeholder="Nguyễn Văn An" />
+          </label>
+          <label className="user-admin__field">
+            <span>Email *</span>
+            <input name="email" type="email" required placeholder="hs@game.local" />
+          </label>
+          <label className="user-admin__field">
+            <span>Mật khẩu *</span>
+            <input name="password" type="password" required minLength={6} placeholder="123456" />
+          </label>
+          <label className="user-admin__field">
+            <span>Vai trò *</span>
+            <select
+              name="role"
+              value={formRole}
+              onChange={(e) => setFormRole(e.target.value as Role)}
+              required
+            >
+              {allowedRoles.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {formRole === 'STUDENT' && (
+            <label className="user-admin__field">
+              <span>Lớp *</span>
+              <select name="classId" required defaultValue="">
+                <option value="" disabled>
+                  Chọn lớp
+                </option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? 'Đang tạo…' : 'Tạo tài khoản'}
+          </button>
+        </form>
+      </div>
+
+      <div className="card user-admin__block quiz-excel-upload">
+        <h3 className="user-admin__title">📤 Nhập danh sách từ Excel</h3>
+        <p className="user-admin__desc">
+          Tải file mẫu, điền nhiều dòng, rồi upload. Cột <strong>Vai trò</strong>: HS, GV hoặc
+          Admin.
+        </p>
+        <div className="quiz-excel-upload__actions">
+          <button type="button" className="btn btn-secondary" onClick={() => downloadUserTemplate()}>
+            ⬇ Tải file mẫu (.xlsx)
+          </button>
+          <label className={`btn btn-primary quiz-excel-upload__pick ${uploading ? 'disabled' : ''}`}>
+            {uploading ? 'Đang import…' : '📂 Chọn file Excel'}
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              hidden
+              disabled={uploading}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleExcel(f);
+              }}
+            />
+          </label>
+        </div>
+        {excelError && (
+          <p className="quiz-excel-upload__error" role="alert">
+            {excelError}
+          </p>
+        )}
+        <details className="quiz-excel-upload__help">
+          <summary>Cấu trúc cột file mẫu</summary>
+          <ul>
+            <li>
+              <strong>Họ tên</strong> — tên hiển thị
+            </li>
+            <li>
+              <strong>Email</strong> — không trùng tài khoản có sẵn
+            </li>
+            <li>
+              <strong>Mật khẩu</strong> — tối thiểu 6 ký tự
+            </li>
+            <li>
+              <strong>Vai trò</strong> — HS / GV / Admin (hoặc STUDENT, TEACHER, ORG_ADMIN)
+            </li>
+            <li>
+              <strong>Lớp</strong> — bắt buộc với HS (VD: 6A1), để trống với GV
+            </li>
+          </ul>
+        </details>
+      </div>
+
+      <p className="user-admin__count">
+        Đang có <strong>{users.length}</strong> tài khoản trong phạm vi bạn xem được.
+      </p>
+    </div>
+  );
+}

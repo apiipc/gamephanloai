@@ -1,0 +1,425 @@
+[
+  {
+    "question": "Vỏ hộp sữa sau giờ ra chơi nên bỏ vào đâu ?",
+    "optionA": "Rác hữu cơ",
+    "optionB": "Rác tái chế",
+    "optionC": "Rác nguy hại",
+    "optionD": "Rác y tế",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Thức ăn thừa từ căn tin trường học nên bỏ vào đâu ?",
+    "optionA": "Rác tái chế",
+    "optionB": "Rác hữu cơ",
+    "optionC": "Rác nguy hại",
+    "optionD": "Rác vô cơ",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Khăn giấy đã sử dụng trong lớp học nên bỏ vào đâu ?",
+    "optionA": "Rác tái chế",
+    "optionB": "Rác hữu cơ",
+    "optionC": "Rác sinh hoạt thông thường",
+    "optionD": "Rác điện tử",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Lá cây quét từ sân trường thuộc nhóm rác nào ?",
+    "optionA": "Rác hữu cơ",
+    "optionB": "Rác tái chế",
+    "optionC": "Rác điện tử",
+    "optionD": "Rác nguy hại",
+    "correctOption": "A",
+    "explanation": ""
+  },
+  {
+    "question": "Vở cũ còn sạch có thể làm gì để bảo vệ môi trường ?",
+    "optionA": "Vứt bỏ ngay",
+    "optionB": "Đốt bỏ",
+    "optionC": "Tái sử dụng hoặc tái chế",
+    "optionD": "Chôn xuống đất",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Hành động nào giúp lớp học sạch đẹp hơn ?",
+    "optionA": "Vứt rác dưới gầm bàn",
+    "optionB": "Phân loại rác đúng thùng",
+    "optionC": "Xả rác ra sân trường",
+    "optionD": "Dùng nhiều nhựa một lần",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Vỏ bánh kẹo sau giờ ra chơi thường được xếp vào loại rác nào ?",
+    "optionA": "Rác hữu cơ",
+    "optionB": "Rác tái chế",
+    "optionC": "Rác sinh hoạt thông thường",
+    "optionD": "Rác điện tử",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "USB hỏng thuộc loại rác nào ?",
+    "optionA": "Rác hữu cơ",
+    "optionB": "Rác tái chế giấy",
+    "optionC": "Rác điện tử",
+    "optionD": "Rác sinh hoạt",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Loại rác nào dưới đây có thể gây hại cho môi trường nếu xử lý sai cách ?",
+    "optionA": "Lá cây",
+    "optionB": "Giấy báo",
+    "optionC": "Pin cũ",
+    "optionD": "Vỏ trái cây",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Túi nilon học sinh mang đồ ăn sáng thuộc loại rác nào ?",
+    "optionA": "Rác hữu cơ",
+    "optionB": "Rác tái chế",
+    "optionC": "Rác sinh hoạt khó phân hủy",
+    "optionD": "Rác y tế",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Vỏ hộp bút bằng giấy cứng nên bỏ vào đâu ?",
+    "optionA": "Rác tái chế",
+    "optionB": "Rác hữu cơ",
+    "optionC": "Rác nguy hại",
+    "optionD": "Rác điện tử",
+    "correctOption": "A",
+    "explanation": ""
+  },
+  {
+    "question": "Khi thấy bạn vứt rác không đúng nơi quy định , em nên làm gì ?",
+    "optionA": "Làm theo bạn",
+    "optionB": "Bỏ qua",
+    "optionC": "Nhắc nhở nhẹ nhàng",
+    "optionD": "Vứt thêm rác",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Vì sao học sinh cần tham gia phân loại rác tại trường học ?",
+    "optionA": "Để tăng việc cho giáo viên",
+    "optionB": "Để bảo vệ môi trường và xây dựng trường học xanh",
+    "optionC": "Để có thêm bài tập",
+    "optionD": "Để làm bẩn lớp học",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Khi thùng rác tái chế đã đầy , học sinh nên làm gì ?",
+    "optionA": "Tiếp tục nhét thêm rác",
+    "optionB": "Vứt ra sân trường",
+    "optionC": "Báo giáo viên hoặc phụ trách vệ sinh",
+    "optionD": "Mang về nhà bỏ",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Học sinh quét QR sau khi bỏ rác đúng nơi nhằm mục đích gì ?",
+    "optionA": "Chơi game",
+    "optionB": "Tích điểm xanh và ghi nhận hoạt động",
+    "optionC": "Mở khóa điện thoại",
+    "optionD": "Điểm danh lớp học",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Một bạn bỏ pin cũ vào thùng rác thông thường . Em nên làm gì ?",
+    "optionA": "Không quan tâm",
+    "optionB": "Nhắc bạn bỏ vào thùng rác nguy hại",
+    "optionC": "Vứt thêm rác vào cùng",
+    "optionD": "Mang pin về nhà chơi tiếp",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Khi tham gia “ Ngày hội đổi rác lấy quà ”, học sinh cần làm gì trước tiên ?",
+    "optionA": "Vứt rác tùy ý",
+    "optionB": "Phân loại rác đúng nhóm",
+    "optionC": "Đốt rác để giảm số lượng",
+    "optionD": "Giấu rác để đổi nhiều quà",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Trong lớp học , hoạt động nào góp phần xây dựng “ lớp học xanh ”?",
+    "optionA": "Sử dụng nhiều đồ nhựa dùng một lần",
+    "optionB": "Tắt điện khi ra khỏi lớp",
+    "optionC": "Xả rác dưới ngăn bàn",
+    "optionD": "Viết bậy lên bàn ghế",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Hành động nào giúp giảm ô nhiễm môi trường trong trường học ?",
+    "optionA": "Vứt rác xuống sân trường",
+    "optionB": "Phân loại rác đúng nơi quy định",
+    "optionC": "Đốt rác sau giờ học",
+    "optionD": "Sử dụng nhiều túi nilon",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Trồng thêm cây xanh có lợi ích gì ?",
+    "optionA": "Làm tăng nhiệt độ",
+    "optionB": "Gây ô nhiễm không khí",
+    "optionC": "Làm sạch không khí và tạo bóng mát",
+    "optionD": "Tăng lượng rác thải",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Hành động nào thể hiện ý thức bảo vệ môi trường ?",
+    "optionA": "Giẫm lên bồn hoa",
+    "optionB": "Vẽ bậy lên tường lớp học",
+    "optionC": "Thu gom rác sau hoạt động tập thể",
+    "optionD": "Bẻ cành cây trong sân trường",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Hành động nào giúp xây dựng “ trường học xanh ”?",
+    "optionA": "Xả rác bừa bãi",
+    "optionB": "Sử dụng tiết kiệm điện , nước",
+    "optionC": "Đốt lá cây trong sân trường",
+    "optionD": "Dùng nhiều đồ nhựa một lần",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Mục tiêu quan trọng của bảo vệ môi trường là gì ?",
+    "optionA": "Làm tăng ô nhiễm",
+    "optionB": "Giữ môi trường xanh – sạch – đẹp",
+    "optionC": "Tăng lượng rác thải",
+    "optionD": "Sử dụng nhiều tài nguyên hơn",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Vỏ chai nhựa nên được bỏ vào loại rác nào ?",
+    "optionA": "Rác hữu cơ",
+    "optionB": "Rác tái chế",
+    "optionC": "Rác nguy hại",
+    "optionD": "Rác y tế",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Lợi ích của phân loại rác tại nguồn là gì ?",
+    "optionA": "Tăng lượng rác thải",
+    "optionB": "Giúp tái chế và xử lý rác hiệu quả hơn",
+    "optionC": "Làm mất vệ sinh môi trường",
+    "optionD": "Gây khó khăn cho thu gom rác",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Phân loại rác đúng cách giúp giảm điều gì ?",
+    "optionA": "Ô nhiễm môi trường",
+    "optionB": "Ý thức học sinh",
+    "optionC": "Số lượng cây xanh",
+    "optionD": "Hoạt động tái chế",
+    "correctOption": "A",
+    "explanation": ""
+  },
+  {
+    "question": "Tái chế rác thải mang lại lợi ích nào sau đây ?",
+    "optionA": "Tiết kiệm tài nguyên thiên nhiên",
+    "optionB": "Tăng ô nhiễm môi trường",
+    "optionC": "Làm tăng lượng rác",
+    "optionD": "Gây lãng phí năng lượng",
+    "correctOption": "A",
+    "explanation": ""
+  },
+  {
+    "question": "Rác điện tử như dây sạc hỏng nên được xử lý như thế nào ?",
+    "optionA": "Bỏ chung với rác hữu cơ",
+    "optionB": "Đem tái chế hoặc thu gom riêng",
+    "optionC": "Vứt xuống cống",
+    "optionD": "Đốt ngoài trời",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Khẩu trang đã qua sử dụng nên bỏ vào loại rác nào ?",
+    "optionA": "Rác tái chế",
+    "optionB": "Rác hữu cơ",
+    "optionC": "Rác nguy hại /y tế",
+    "optionD": "Rác giấy",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu vỏ chuối biết nói , “ bạn ấy ” muốn được bỏ vào đâu nhất ?",
+    "optionA": "Thùng rác tái chế",
+    "optionB": "Thùng rác hữu cơ",
+    "optionC": "Thùng rác điện tử",
+    "optionD": "Gầm bàn học",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Ai dưới đây là “ kẻ thù ” của môi trường học đường ?",
+    "optionA": "Bạn bỏ rác đúng nơi",
+    "optionB": "Bạn mang bình nước cá nhân",
+    "optionC": "Bạn xả rác dưới ngăn bàn",
+    "optionD": "Bạn trồng cây xanh",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "C “ Siêu anh hùng môi trường ” trong trường học thường làm gì ?",
+    "optionA": "Xả rác thật nhanh",
+    "optionB": "Phân loại rác và nhắc bạn giữ vệ sinh",
+    "optionC": "Vẽ bậy lên bàn ghế",
+    "optionD": "Dùng thật nhiều nhựa một lần",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu trường học sạch đẹp , điều nào sau đây dễ xảy ra nhất ?",
+    "optionA": "Học sinh thích đến trường hơn",
+    "optionB": "Rác xuất hiện nhiều hơn",
+    "optionC": "Không khí ô nhiễm hơn",
+    "optionD": "Sân trường bừa bộn hơn",
+    "correctOption": "A",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu chiếc lon nước ngọt có “ ước mơ ”, nó sẽ muốn trở thành gì sau khi được tái chế ?",
+    "optionA": "Rác ngoài bãi đất",
+    "optionB": "Một sản phẩm mới hữu ích",
+    "optionC": "Khói từ đống lửa",
+    "optionD": "Đồ bỏ đi mãi mãi",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu sân trường đầy rác , điều gì sẽ xảy ra đầu tiên ?",
+    "optionA": "Sân trường sạch hơn",
+    "optionB": "Không khí trong lành hơn",
+    "optionC": "Mất mỹ quan và dễ ô nhiễm",
+    "optionD": "Cây xanh phát triển nhanh hơn",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Điều gì giúp một lớp học trở thành “ lớp học xanh ”?",
+    "optionA": "Có nhiều rác dưới gầm bàn",
+    "optionB": "Thường xuyên mở điện cả ngày",
+    "optionC": "Giữ vệ sinh và tiết kiệm tài nguyên",
+    "optionD": "Dùng thật nhiều đồ nhựa",
+    "correctOption": "C",
+    "explanation": ""
+  },
+  {
+    "question": "Khi nhìn thấy giấy vụn còn dùng được , em nên làm gì ?",
+    "optionA": "Vứt ngay vào sọt rác",
+    "optionB": "Dùng làm giấy nháp",
+    "optionC": "Xé nhỏ để chơi",
+    "optionD": "Ném xuống sân trường",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Điều gì giúp giảm rác thải nhiều nhất trong trường học ?",
+    "optionA": "Dùng đồ một lần liên tục",
+    "optionB": "Tái sử dụng và phân loại rác",
+    "optionC": "Vứt rác chung vào một thùng",
+    "optionD": "Đốt rác mỗi ngày",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu chiếc lá trong sân trường có “ siêu năng lực ”, nó thích được làm gì nhất ?",
+    "optionA": "Bay khắp lớp học",
+    "optionB": "Được ủ thành phân hữu cơ",
+    "optionC": "Bị đốt ngoài sân",
+    "optionD": "Nằm mãi trong cống",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu thùng rác biết “ chấm điểm ”, bạn nào sẽ được điểm cao nhất ?",
+    "optionA": "Bạn bỏ rác đúng phân loại",
+    "optionB": "Bạn nhét rác lung tung",
+    "optionC": "Bạn vứt rác xuống hành lang",
+    "optionD": "Bạn bỏ rác ngoài thùng",
+    "correctOption": "A",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu chai nhựa được bỏ đúng nơi , điều nào có thể xảy ra tiếp theo ?",
+    "optionA": "Được tái chế thành vật dụng mới",
+    "optionB": "Gây ô nhiễm sân trường",
+    "optionC": "Làm tắc cống thoát nước",
+    "optionD": "Bay lên trời",
+    "correctOption": "A",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu môi trường trường học sạch đẹp , học sinh sẽ cảm thấy thế nào ?",
+    "optionA": "Khó chịu hơn",
+    "optionB": "Thoải mái và hứng thú học tập hơn",
+    "optionC": "Mệt mỏi hơn",
+    "optionD": "Không muốn đến trường",
+    "correctOption": "B",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu mỗi lớp đều tích cực phân loại rác , điều gì tốt đẹp nhất có thể đạt được ?",
+    "optionA": "Trường học xanh – sạch – đẹp hơn",
+    "optionB": "Lượng rác tăng lên",
+    "optionC": "Ô nhiễm nhiều hơn",
+    "optionD": "Tốn nhiều tài nguyên hơn",
+    "correctOption": "A",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu thùng rác tái chế có “ nhật ký ”, điều gì sẽ làm thùng vui nhất ?",
+    "optionA": "Được bỏ đúng chai nhựa , giấy , lon",
+    "optionB": "Bị nhét thức ăn thừa",
+    "optionC": "Bị bỏ rác lung tung bên ngoài",
+    "optionD": "Không ai sử dụng",
+    "correctOption": "A",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu mỗi bạn tiết kiệm một tờ giấy mỗi ngày , điều gì sẽ được bảo vệ tốt hơn ?",
+    "optionA": "Cây xanh và tài nguyên rừng",
+    "optionB": "Bãi rác",
+    "optionC": "Ô nhiễm không khí",
+    "optionD": "Rác thải nhựa",
+    "correctOption": "A",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu một chiếc khẩu trang bị bỏ bừa bãi , điều nào có thể xảy ra?",
+    "optionA": "Gây mất vệ sinh môi trường",
+    "optionB": "Làm sân trường sạch hơn",
+    "optionC": "Tự biến mất ngay",
+    "optionD": "Giúp cây xanh phát triển",
+    "correctOption": "A",
+    "explanation": ""
+  },
+  {
+    "question": "Nếu trường học tổ chức đổi rác lấy quà , điều ý nghĩa nhất học sinh học được là gì ?",
+    "optionA": "Bảo vệ môi trường cũng có thể trở thành thói quen vui vẻ",
+    "optionB": "Càng tạo nhiều rác càng tốt",
+    "optionC": "Chỉ cần quà , không cần phân loại rác",
+    "optionD": "Rác không cần xử lý đúng cách",
+    "correctOption": "A",
+    "explanation": ""
+  }
+]

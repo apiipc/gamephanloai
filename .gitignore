@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.DS_Store
+
+# Secrets & local env
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.local
+
+# SQLite (local dev only)
+*.db
+*.db-journal
+
+# Build caches
+*.tsbuildinfo
+apps/api/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
