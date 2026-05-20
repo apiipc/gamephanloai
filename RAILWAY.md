@@ -42,8 +42,22 @@ Không cần Vercel — web + API + DB đều trên Railway.
 | **2. CLI** | Deploy từ máy, xem log | [CLI Deploying](https://docs.railway.com/cli/deploying) |
 | **3. GitHub Actions** | Tự deploy mỗi lần push | [GitHub Actions](https://blog.railway.com/p/github-actions) |
 | **4. Config file** | Build/start cố định | [Config as code](https://docs.railway.com/deployments/reference) |
+| **5. AI trong Cursor** | Hỏi AI deploy, log, biến môi trường | [Railway + AI](https://docs.railway.com/ai.md) |
 
 Repo đã có sẵn: `apps/api/railway.toml`, `apps/web/railway.toml`, `.github/workflows/railway-deploy.yml`.
+
+### Cách 5 — MCP + skill `use-railway` (Cursor)
+
+1. **Đăng nhập Railway CLI** (một lần trên máy): `npx @railway/cli@latest login` hoặc dùng project token qua biến `RAILWAY_TOKEN`.
+2. **MCP**: file [`.cursor/mcp.json`](./.cursor/mcp.json) đã cấu hình server **Railway** (`npx -y @railway/mcp-server`). Mở **Cursor → Settings → MCP**, bật server **Railway**, rồi **Reload** cửa sổ Cursor nếu cần.
+3. **Skill** (hướng dẫn AI làm đúng quy trình Railway): chạy trên máy:
+   ```bash
+   railway setup agent -y
+   ```
+   hoặc chỉ cài skill: `railway skills install` / `npx skills add railwayapp/railway-skills`  
+   Chi tiết: [Agent skills](https://docs.railway.com/ai/agent-skills), [MCP server](https://docs.railway.com/ai/mcp-server).
+
+**Lưu ý:** Không commit token; MCP chạy CLI Railway dưới tài khoản đã đăng nhập trên máy bạn.
 
 ---
 

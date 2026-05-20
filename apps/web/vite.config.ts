@@ -1,3 +1,7 @@
+/**
+ * Vite: dev server + production **build** (`vite build` → `dist/`).
+ * Railway serves `dist/` with `serve` (see Dockerfile) — Vite does not run on the production host.
+ */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 

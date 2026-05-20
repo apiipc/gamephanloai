@@ -25,3 +25,7 @@ apps/api/dist/
 # Railway local link (never commit tokens)
 .railway/.env
 .railway/config.json
+
+# Railway AI skill output (install: npx skills add railwayapp/railway-skills)
+.agents/
+skills-lock.json
