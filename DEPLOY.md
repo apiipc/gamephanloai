@@ -14,9 +14,12 @@ Build log có dòng:
 Build log **đúng** phải có:
 
 ```text
+added ~98 packages     ← chỉ web (KHÔNG phải 426)
 > web@1.0.0 build
 > tsc -b && vite build
 ```
+
+Nếu thấy **`added 424 packages`** + cảnh báo `rimraf` / `npmlog` → vẫn đang cài cả API (sai).
 
 ---
 
