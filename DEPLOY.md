@@ -58,13 +58,8 @@ Redeploy sau khi thêm.
 
 ---
 
-## API — Railway / Render (không Vercel static)
+## API — Railway
 
-| Mục | Giá trị |
-|-----|---------|
-| Root | `apps/api` |
-| Build | `npm run build` |
-| Start | `npm run start` |
-| Env | `DATABASE_URL` (Postgres), `JWT_SECRET` |
+Chi tiết từng bước: **[RAILWAY.md](./RAILWAY.md)**
 
-CORS: cho phép domain `*.vercel.app`.
+Tóm tắt: Postgres plugin + Root `apps/api` + `VITE_API_URL` trên Vercel.

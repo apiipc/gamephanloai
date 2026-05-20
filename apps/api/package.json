@@ -7,6 +7,9 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/src/main.js",
+    "start:railway": "prisma db push && node dist/src/main.js",
+    "build:railway": "prisma generate && npm run build",
+    "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma db push",
     "db:seed": "tsx prisma/seed.ts"
