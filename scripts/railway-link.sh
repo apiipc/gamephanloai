@@ -11,7 +11,7 @@
 
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PROJECT_ID="1323cca9-cdce-4444-b158-f6f7c903a453"
+PROJECT_ID="1323cca9-cdce-4443-b158-f6f7c903a453"
 CLI="npx @railway/cli@latest"
 
 echo "→ Link API (apps/api)..."

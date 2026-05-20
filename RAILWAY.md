@@ -7,7 +7,7 @@ Hướng dẫn cho repo **[gamephanloai](https://github.com/apiipc/gamephanloai)
 | | |
 |--|--|
 | Tên | `game` |
-| **Project ID** | `1323cca9-cdce-4444-b158-f6f7c903a453` |
+| **Project ID** | `1323cca9-cdce-4443-b158-f6f7c903a453` |
 | File local | `.railway/project.json` |
 
 ---
@@ -148,10 +148,10 @@ Hoặc thủ công:
 
 ```bash
 cd apps/api
-railway link -p 1323cca9-cdce-4444-b158-f6f7c903a453 -e production -s api
+railway link -p 1323cca9-cdce-4443-b158-f6f7c903a453 -e production -s api
 
 cd ../web
-railway link -p 1323cca9-cdce-4444-b158-f6f7c903a453 -e production -s web
+railway link -p 1323cca9-cdce-4443-b158-f6f7c903a453 -e production -s web
 ```
 
 ### 2.3 Deploy từ máy

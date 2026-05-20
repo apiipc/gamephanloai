@@ -24,7 +24,6 @@ on:
   workflow_dispatch:
 
 env:
-  RAILWAY_PROJECT_ID: 1323cca9-cdce-4444-b158-f6f7c903a453
   RAILWAY_ENVIRONMENT: production
 
 jobs:
@@ -45,7 +44,6 @@ jobs:
           fi
           railway up ./apps/api \
             --path-as-root \
-            --project "$RAILWAY_PROJECT_ID" \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service api \
             --ci \
@@ -73,7 +71,6 @@ jobs:
           fi
           railway up ./apps/web \
             --path-as-root \
-            --project "$RAILWAY_PROJECT_ID" \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service web \
             --ci \
