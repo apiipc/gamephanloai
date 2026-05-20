@@ -9,6 +9,11 @@ async function bootstrap() {
     ? frontend.split(',').map((s) => s.trim())
     : true;
   app.enableCors({ origin: corsOrigin, credentials: true });
+  // Railway / reverse proxy — correct client IP & optional secure cookies.
+  const http = app.getHttpAdapter().getInstance();
+  if (typeof http?.set === 'function') {
+    http.set('trust proxy', 1);
+  }
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true }),
   );

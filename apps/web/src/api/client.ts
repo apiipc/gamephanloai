@@ -1,5 +1,7 @@
-/** Dev: Vite proxy `/api` → localhost:3001. Production: set VITE_API_URL on Vercel. */
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+/** Dev: Vite proxy `/api` → API local. Production (Railway, …): set `VITE_API_URL` (no trailing `/`). */
+const rawBase = import.meta.env.VITE_API_URL || '/api';
+const API_BASE =
+  rawBase === '/api' ? rawBase : rawBase.replace(/\/+$/, '');
 
 function getToken(): string | null {
   return localStorage.getItem('token');

@@ -12,10 +12,11 @@ WORKDIR /app
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 COPY package.json ./
-RUN npm install --omit=dev
+# Schema absent until later; postinstall runs prisma generate — skip (client copied from build).
+RUN npm install --omit=dev --ignore-scripts
+COPY prisma ./prisma
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
-COPY prisma ./prisma
 EXPOSE 3001
 CMD ["sh", "-c", "npx prisma db push && node dist/src/main.js"]
