@@ -1,68 +1,98 @@
-# Deploy API lên Railway
+# Deploy toàn bộ lên Railway
 
-Frontend giữ trên **Vercel** (`apps/web`). API + database trên **Railway** (`apps/api`).
+Một project Railway gồm **3 phần**: PostgreSQL + API + Web.
 
-## 1. Tạo project Railway
+```text
+[PostgreSQL]  ←  DATABASE_URL
+      ↓
+[API apps/api]  ←  NestJS :PORT
+      ↑  VITE_API_URL (build web)
+[Web apps/web]  ←  React static :PORT  ← người chơi mở URL này
+```
 
-1. https://railway.app → **New Project** → **Deploy from GitHub repo**
-2. Chọn repo `apiipc/gamephanloai`
-3. **Add service** → **PostgreSQL** (database)
-4. Service **API**: Settings → **Root Directory** = `apps/api`
+Repo: https://github.com/apiipc/gamephanloai
 
-## 2. Biến môi trường (service API)
+---
+
+## Bước 1 — Tạo project
+
+1. https://railway.app → đăng nhập → **New Project**
+2. **Deploy from GitHub repo** → chọn `gamephanloai`
+3. **Add service** → **Database** → **PostgreSQL**
+
+---
+
+## Bước 2 — Service **API**
+
+1. **Add service** → chọn cùng repo `gamephanloai` (service thứ 2)
+2. Đặt tên service: **`api`**
+3. **Settings** → **Root Directory** = `apps/api`
+4. **Variables**:
 
 | Biến | Giá trị |
 |------|---------|
-| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (reference từ plugin Postgres) |
-| `JWT_SECRET` | Chuỗi ngẫu nhiên dài (production) |
-| `FRONTEND_URL` | URL Vercel, vd. `https://gamephanloai.vercel.app` |
-| `PORT` | Railway tự gán — không cần set |
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
+| `JWT_SECRET` | Chuỗi bí mật dài (tự đặt) |
+| `FRONTEND_URL` | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}` *(sau khi có service web)* |
 
-## 3. Build & Start (tự động qua `railway.toml`)
+5. **Networking** → **Generate Domain**
 
-- **Build:** `prisma generate` + `nest build` + `prisma db push`
-- **Start:** `node dist/src/main.js`
+Build/start: `apps/api/railway.toml`
 
-Hoặc trong Railway UI (nếu không đọc `railway.toml`):
+---
 
-- Build Command: `npm run build:railway && npx prisma db push`
-- Start Command: `npm run start`
+## Bước 3 — Service **Web** (giao diện game)
 
-## 4. Seed dữ liệu demo (chạy 1 lần)
+1. **Add service** → cùng repo
+2. Đặt tên: **`web`**
+3. **Root Directory** = `apps/web`
+4. **Variables**:
 
-Railway → service API → **Shell** hoặc CLI:
+| Biến | Giá trị |
+|------|---------|
+| `VITE_API_URL` | `https://${{api.RAILWAY_PUBLIC_DOMAIN}}` |
+
+5. **Networking** → **Generate Domain** → **đây là link game**
+6. Service **api** → cập nhật `FRONTEND_URL` → **Redeploy API**
+
+Build/start: `apps/web/railway.toml`
+
+---
+
+## Bước 4 — Seed (một lần)
+
+Service **api** → **Shell**:
 
 ```bash
 npm run db:seed
 ```
 
-Tài khoản: `hs1@game.local` / `admin@game.local` — mật khẩu `123456`
+Mật khẩu demo: **123456** — `hs1@game.local`, `admin@game.local`, …
 
-## 5. Nối Vercel ↔ Railway
+---
 
-Vercel → Project web → **Environment Variables**:
+## Bước 5 — Kiểm tra
 
-| Name | Value |
-|------|--------|
-| `VITE_API_URL` | URL public Railway API, vd. `https://xxx.up.railway.app` |
+Mở URL **web** → đăng nhập → chơi thử.
 
-**Redeploy** Vercel sau khi thêm biến.
+---
 
-Railway → API → **Settings** → **Networking** → **Generate Domain** để có URL HTTPS.
-
-## 6. Dev local sau khi đổi Postgres
+## Dev local
 
 ```bash
-cp apps/api/.env.example apps/api/.env
-# Sửa DATABASE_URL (Neon free / Docker / copy từ Railway)
 npm install
-npm run db:setup -w apps/api   # hoặc từ root: npm run db:setup
+cp apps/api/.env.example apps/api/.env
+# DATABASE_URL = Postgres (Railway / Docker / Neon)
+npm run db:setup
 npm run dev
 ```
 
-SQLite (`file:./dev.db`) không còn dùng — schema đã chuyển **PostgreSQL**.
+---
 
 ## Lưu ý
 
-- **Upload ảnh rác mới** trên admin: filesystem Railway có thể **mất sau redeploy** — ảnh seed trong `apps/web/public/assets` vẫn ổn.
-- CORS: API chỉ cho phép origin trong `FRONTEND_URL` (production). Dev không set biến này → cho phép mọi origin.
+| Mục | Ghi chú |
+|-----|---------|
+| Không cần Vercel | Web + API + DB đều trên Railway |
+| Tên service | `api` và `web` để biến `${{api...}}` / `${{web...}}` hoạt động |
+| Upload ảnh admin | Có thể mất khi redeploy API; ảnh seed trong repo vẫn OK |
