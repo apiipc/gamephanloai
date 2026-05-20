@@ -22,6 +22,6 @@ echo "→ Link Web (apps/web)..."
 cd "$ROOT/apps/web"
 $CLI link -p "$PROJECT_ID" -e production -s web 2>/dev/null || $CLI link -p "$PROJECT_ID" -e production
 
-echo "Xong. Deploy từ gốc repo (để Railway thấy apps/*/railway.toml):"
-echo "     cd \"$ROOT\" && railway up . --service api"
-echo "     cd \"$ROOT\" && railway up . --service web"
+echo "Xong. Deploy API:  cd apps/api && railway up --path-as-root --service api"
+echo "     Deploy Web:  cd apps/web && railway up --path-as-root --service web"
+echo "     (cần đã railway link; trên dashboard: Config as code = railway.toml khi dùng path-as-root)"
