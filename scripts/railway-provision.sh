@@ -85,9 +85,8 @@ else
 fi
 
 echo ""
-echo "=== Bạn vẫn cần làm trên dashboard Railway (một lần) ==="
-echo "Mỗi service api và web → Settings → Config as code / đường dẫn railway.toml → đặt: railway.toml"
-echo "(Không dùng apps/api/... nếu deploy bằng CLI --path-as-root.)"
+echo "=== (Tuỳ chọn) Dashboard Railway ==="
+echo "Nếu deploy vẫn fail ở Snapshot/config: Config as code → thử railway.toml hoặc /apps/api/railway.toml (repo đã có apps/*/apps/*/railway.toml)."
 echo ""
 
 if [[ "${SKIP_DEPLOY:-}" != "1" ]]; then

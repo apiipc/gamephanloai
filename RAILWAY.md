@@ -69,7 +69,7 @@ chmod +x scripts/railway-provision.sh
 ```
 
 Script set `DATABASE_URL` (tham chiếu Postgres), `JWT_SECRET`, `FRONTEND_URL`, `VITE_API_URL`, tùy chọn đồng bộ `gh secret set VITE_API_URL`, rồi `railway up` cho **api** và **web**.  
-**Dashboard:** mỗi service vẫn cần **Config as code = `railway.toml`** nếu deploy bằng `--path-as-root` (xem Cách 3).
+**Dashboard:** mỗi service vẫn có thể để **Config as code** = `apps/api/railway.toml` / `apps/web/railway.toml` (hoặc `railway.toml` nếu bạn đã đổi). Repo có **bản sao** `apps/*/apps/*/railway.toml` để bundle CLI `--path-as-root` vẫn chứa đúng path đó.
 
 ---
 
@@ -109,8 +109,8 @@ Docs: [PostgreSQL](https://docs.railway.com/databases/postgresql).
 Docs biến tham chiếu: [Variables Reference](https://docs.railway.com/variables/reference).
 
 5. **Settings** → **Config as code** (`railway.toml`):  
-   - Deploy từ **GitHub** (clone full repo): thường **`/apps/api/railway.toml`** (xem [monorepo](https://docs.railway.com/deployments/monorepo)).  
-   - Deploy bằng **CLI / GitHub Actions** (`railway up ./apps/api --path-as-root`): đặt **`railway.toml`** — bundle không có cấp `apps/`.
+   - Thường **`/apps/api/railway.toml`** (GitHub monorepo) hoặc **`railway.toml`**.  
+   - Repo có thêm **`apps/api/apps/api/railway.toml`** (cùng nội dung) để bundle **`--path-as-root`** vẫn có path `apps/api/railway.toml` trong archive.
 6. **Networking** → **Generate Domain** → copy URL API.
 
 Docs NestJS: [Nest.js on Railway](https://docs.railway.com/guides/nestjs).
@@ -126,7 +126,7 @@ Docs NestJS: [Nest.js on Railway](https://docs.railway.com/guides/nestjs).
 |------|---------|
 | `VITE_API_URL` | `https://${{api.RAILWAY_PUBLIC_DOMAIN}}` |
 
-5. **Config as code:** giống **api** — GitHub full clone: **`/apps/web/railway.toml`**; CLI `--path-as-root`: **`railway.toml`**.
+5. **Config as code:** giống **api** — có thể **`/apps/web/railway.toml`** (GitHub) hoặc **`railway.toml`**. File **`apps/web/apps/web/railway.toml`** giúp deploy CLI `--path-as-root` vẫn khớp path mặc định.
 
 6. **Networking** → **Generate Domain** → **đây là link game**.
 7. Quay lại service **api** → sửa `FRONTEND_URL` → **Redeploy** API.
