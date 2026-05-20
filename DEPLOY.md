@@ -1,10 +1,28 @@
 # Deploy lên Vercel
 
-## Chỉ deploy **giao diện** (`apps/web`)
+## ⚠️ Lỗi thường gặp
 
-API NestJS **không** deploy cùng Vercel kiểu static — host API ở Railway/Render.
+Build log có dòng:
 
-### Cấu hình Vercel (New Project)
+```text
+> api@1.0.0 build
+> nest build
+```
+
+→ Bạn đang deploy **`apps/api`** (sai). Trang sẽ **404**.
+
+Build log **đúng** phải có:
+
+```text
+> web@1.0.0 build
+> tsc -b && vite build
+```
+
+---
+
+## Cách 1 — Root Directory = `apps/web` (khuyến nghị)
+
+Tạo project Vercel **mới** (hoặc sửa Settings):
 
 | Mục | Giá trị |
 |-----|---------|
@@ -13,22 +31,37 @@ API NestJS **không** deploy cùng Vercel kiểu static — host API ở Railway
 | Framework Preset | **Vite** |
 | Build Command | `npm run build` |
 | Output Directory | `dist` |
-| Install Command | `npm install` (mặc định) |
 
-**Không** chọn Root Directory = `apps/api` (sẽ lỗi *No Output Directory named "public"*).
+File `apps/web/vercel.json` đã có sẵn trên repo.
 
-### Biến môi trường (sau khi có API online)
+---
+
+## Cách 2 — Root Directory = `.` (thư mục gốc repo)
+
+| Mục | Giá trị |
+|-----|---------|
+| Root Directory | *(để trống / `.`)* |
+| Build / Output | dùng `vercel.json` ở gốc repo |
+
+---
+
+## Biến môi trường (khi đã có API online)
 
 | Name | Value |
 |------|--------|
-| `VITE_API_URL` | `https://your-api.example.com` (URL API, không `/` cuối) |
+| `VITE_API_URL` | `https://your-api.railway.app` (không `/` cuối) |
 
-Redeploy sau khi thêm biến.
+Redeploy sau khi thêm.
 
-### API (Railway gợi ý)
+---
 
-1. New project → deploy từ cùng repo GitHub
-2. Root: `apps/api`
-3. Start: `npm run start` (sau `npm run build`)
-4. Env: `DATABASE_URL` (Postgres/Neon), `JWT_SECRET`
-5. CORS: cho phép domain `*.vercel.app`
+## API — Railway / Render (không Vercel static)
+
+| Mục | Giá trị |
+|-----|---------|
+| Root | `apps/api` |
+| Build | `npm run build` |
+| Start | `npm run start` |
+| Env | `DATABASE_URL` (Postgres), `JWT_SECRET` |
+
+CORS: cho phép domain `*.vercel.app`.
