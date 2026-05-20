@@ -21,3 +21,7 @@ apps/api/dist/
 .idea/
 .vscode/
 *.swp
+
+# Railway local link (never commit tokens)
+.railway/.env
+.railway/config.json

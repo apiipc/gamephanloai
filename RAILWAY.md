@@ -12,6 +12,18 @@ Một project Railway gồm **3 phần**: PostgreSQL + API + Web.
 
 Repo: https://github.com/apiipc/gamephanloai
 
+**Project ID (Railway):** `1323cca9-cdce-4444-b158-f6f7c903a453` — lưu trong `.railway/project.json`
+
+---
+
+## ⚠️ Token & bảo mật
+
+- **Project Token** (Settings → Tokens): chỉ dùng trên máy bạn / CI — đặt `export RAILWAY_TOKEN=...` — **không** gửi token trong chat, không commit Git.
+- Token chỉ hiện **một lần** khi tạo. Nếu đã lộ → **xóa token cũ** → tạo token mới.
+- Token **không** thay được việc tạo Postgres + service trên dashboard lần đầu (đặc biệt khi Railway báo *Deploys paused*).
+
+CLI đầy đủ: `npx @railway/cli login` (đăng nhập tài khoản) rồi chạy `./scripts/railway-link.sh`
+
 ---
 
 ## Bước 1 — Tạo project
