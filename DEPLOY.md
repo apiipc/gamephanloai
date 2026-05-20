@@ -4,6 +4,8 @@ Toàn bộ chạy trên **Railway** (PostgreSQL + API + Web).
 
 Hướng dẫn chi tiết: **[RAILWAY.md](./RAILWAY.md)**
 
+Deploy tự động (GitHub Actions): **[RAILWAY-SETUP.md](./RAILWAY-SETUP.md)**
+
 ## Tóm tắt
 
 | Service | Root Directory | Vai trò |

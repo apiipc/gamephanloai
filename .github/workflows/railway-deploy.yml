@@ -1,0 +1,80 @@
+# Deploy API + Web lên Railway khi push main (hoặc chạy tay).
+#
+# Thiết lập 1 lần (trên máy bạn):
+#   gh secret set RAILWAY_TOKEN --repo apiipc/gamephanloai
+#   (dán Project Token từ Railway → Settings → Tokens)
+#
+# Sau khi API có domain, thêm:
+#   gh secret set VITE_API_URL --repo apiipc/gamephanloai
+#   (vd. https://api-production-xxxx.up.railway.app)
+#
+# Trên Railway: tạo sẵn 3 phần — Postgres + service tên "api" + service tên "web"
+# (Root Directory api/web cấu hình trên Railway hoặc deploy bằng CLI bên dưới)
+
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'apps/web/**'
+      - 'package-lock.json'
+      - '.github/workflows/railway-deploy.yml'
+  workflow_dispatch:
+
+env:
+  RAILWAY_PROJECT_ID: 1323cca9-cdce-4444-b158-f6f7c903a453
+  RAILWAY_ENVIRONMENT: production
+
+jobs:
+  deploy-api:
+    name: Deploy API
+    runs-on: ubuntu-latest
+    container: ghcr.io/railwayapp/cli:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy apps/api
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::Thiếu GitHub secret RAILWAY_TOKEN"
+            exit 1
+          fi
+          railway up ./apps/api \
+            --path-as-root \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment "$RAILWAY_ENVIRONMENT" \
+            --service api \
+            --ci \
+            --message "deploy api from GitHub Actions"
+
+  deploy-web:
+    name: Deploy Web
+    needs: deploy-api
+    runs-on: ubuntu-latest
+    container: ghcr.io/railwayapp/cli:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy apps/web
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::Thiếu GitHub secret RAILWAY_TOKEN"
+            exit 1
+          fi
+          if [ -n "$VITE_API_URL" ]; then
+            export VITE_API_URL
+          fi
+          railway up ./apps/web \
+            --path-as-root \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment "$RAILWAY_ENVIRONMENT" \
+            --service web \
+            --ci \
+            --message "deploy web from GitHub Actions"
