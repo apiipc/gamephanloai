@@ -25,7 +25,8 @@ ENV NODE_ENV=production
 ENV WEB_DIST_PATH=/app/web-dist
 ENV SEED_ITEMS_MANIFEST=/app/seed-assets/items-manifest.json
 COPY apps/api/package.json ./
-RUN npm install --omit=dev --ignore-scripts
+# Runtime needs install scripts for native deps like bcrypt.
+RUN npm install --omit=dev
 COPY apps/api/prisma ./prisma
 COPY --from=api-build /app/dist ./dist
 COPY --from=api-build /app/node_modules/.prisma ./node_modules/.prisma
