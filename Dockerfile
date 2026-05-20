@@ -1,4 +1,4 @@
-# API — build từ **gốc monorepo** (Railway: Root Directory để trống, RAILWAY_DOCKERFILE_PATH=Dockerfile.api)
+# API — build từ **gốc monorepo** (Railway: Root Directory trống; file mặc định `Dockerfile`)
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*

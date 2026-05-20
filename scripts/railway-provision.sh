@@ -50,13 +50,15 @@ if [[ -z "$JWT" ]]; then
 fi
 
 DB_REF="\${{${POSTGRES}.DATABASE_URL}}"
-echo "→ api: DATABASE_URL, FRONTEND_URL, JWT_SECRET, RAILWAY_DOCKERFILE_PATH"
+echo "→ api: DATABASE_URL, FRONTEND_URL, JWT_SECRET (Docker mặc định: Dockerfile ở gốc repo)"
+
+# Bỏ RAILWAY_DOCKERFILE_PATH cũ trỏ tới Dockerfile.api (file đã đổi tên).
+$CLI variable delete RAILWAY_DOCKERFILE_PATH --service api --environment "$ENV" --project "$PROJECT_ID" 2>/dev/null || true
 
 # shellcheck disable=SC2086
 $CLI variable set \
   "DATABASE_URL=${DB_REF}" \
   "FRONTEND_URL=${WEB_URL}" \
-  "RAILWAY_DOCKERFILE_PATH=Dockerfile.api" \
   --service api \
   --environment "$ENV" \
   --project "$PROJECT_ID"
@@ -91,7 +93,7 @@ fi
 echo ""
 echo "=== Kiểm tra dashboard Railway ==="
 echo "Source → Root Directory: ĐỂ TRỐNG (cả api và web). Xóa Watch Paths hoặc để **."
-echo "Config as code: có thể tắt nếu dùng Dockerfile.api / Dockerfile.web."
+echo "Config as code: có thể tắt (api dùng Dockerfile gốc; web dùng Dockerfile.web + biến RAILWAY_DOCKERFILE_PATH)."
 echo ""
 
 if [[ "${SKIP_DEPLOY:-}" != "1" ]]; then

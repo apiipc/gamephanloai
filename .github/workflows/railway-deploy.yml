@@ -10,7 +10,7 @@
 #
 # Trên Railway — quan trọng (tránh watch paths + đủ context Docker):
 #   - Service **api** và **web**: Settings → Source → **Root Directory để TRỐNG** (repo root).
-#   - Variables: **RAILWAY_DOCKERFILE_PATH** = `Dockerfile.api` / `Dockerfile.web`.
+#   - Biến: **web** cần `RAILWAY_DOCKERFILE_PATH=Dockerfile.web`. **api** dùng `Dockerfile` ở gốc repo.
 #   - Có thể xóa / để trống **Config as code** (railway.toml) nếu chỉ dùng Dockerfile.
 #
 # Script local: ./scripts/railway-provision.sh (set biến + deploy)
@@ -23,7 +23,7 @@ on:
     paths:
       - 'apps/api/**'
       - 'apps/web/**'
-      - 'Dockerfile.api'
+      - 'Dockerfile'
       - 'Dockerfile.web'
       - '.dockerignore'
       - 'package-lock.json'
