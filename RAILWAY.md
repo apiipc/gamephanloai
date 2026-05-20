@@ -219,6 +219,8 @@ Xem log: GitHub → **Actions** → **Deploy to Railway**.
 
 **Lưu ý:** Trên Railway phải **đã tạo** service tên `api` và `web` (Cách 1) trước khi Actions deploy được.
 
+Workflow upload **toàn bộ repo** (`railway up .`), không upload chỉ `apps/api` hay `apps/web`. Service vẫn dùng **Root Directory** `apps/api` / `apps/web` như Cách 1 — Railway cần đường dẫn `apps/*/railway.toml` trong snapshot.
+
 ---
 
 # Cách 4 — Config as code (`railway.toml`)
@@ -282,6 +284,7 @@ Schema production dùng **PostgreSQL** (không còn SQLite `dev.db`).
 | Trang **404** | Deploy nhầm API làm static | Chỉ `apps/web` serve `dist` |
 | Đăng nhập lỗi | Web chưa có `VITE_API_URL` | Set biến + redeploy web |
 | CORS lỗi | `FRONTEND_URL` sai | `https://` + domain web, redeploy API |
+| **`service config at 'apps/.../railway.toml' not found`** | Deploy CLI/GitHub chỉ gửi thư mục con (`--path-as-root`) | Dùng `railway up .` từ **gốc repo**; giữ Root Directory `apps/api` / `apps/web` trên dashboard |
 | `Unauthorized` CLI | Chưa login / token hỏng | `railway login` hoặc token mới |
 | Actions fail | Thiếu secret / chưa có service | `gh secret set` + tạo `api`/`web` trên Railway |
 

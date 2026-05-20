@@ -8,8 +8,11 @@
 #   gh secret set VITE_API_URL --repo apiipc/gamephanloai
 #   (vd. https://api-production-xxxx.up.railway.app)
 #
-# Trên Railway: tạo sẵn 3 phần — Postgres + service tên "api" + service tên "web"
-# (Root Directory api/web cấu hình trên Railway hoặc deploy bằng CLI bên dưới)
+# Trên Railway: Postgres + service "api" + "web"; mỗi service Root Directory = apps/api | apps/web
+#
+# QUAN TRỌNG — không dùng --path-as-root: Railway (và railway.toml tại apps/*/...)
+# cần snapshot **cả monorepo**; nếu chỉ upload apps/web thì file apps/web/railway.toml
+# không tồn tại trong snapshot → "service config ... not found".
 
 name: Deploy to Railway
 
@@ -42,8 +45,7 @@ jobs:
             echo "::error::Thiếu GitHub secret RAILWAY_TOKEN"
             exit 1
           fi
-          railway up ./apps/api \
-            --path-as-root \
+          railway up . \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service api \
             --detach \
@@ -69,8 +71,7 @@ jobs:
           if [ -n "$VITE_API_URL" ]; then
             export VITE_API_URL
           fi
-          railway up ./apps/web \
-            --path-as-root \
+          railway up . \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service web \
             --detach \

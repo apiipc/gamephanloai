@@ -1,4 +1,4 @@
-# Build static web (Vite). Railway: Root Directory = apps/web or `railway up ./apps/web --path-as-root`
+# Build static web (Vite). Railway: Root Directory = apps/web; deploy monorepo: `railway up . --service web` (repo root)
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package.json ./

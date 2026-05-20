@@ -1,4 +1,4 @@
-# NestJS API + Prisma. Railway: Root Directory = apps/api or `railway up ./apps/api --path-as-root`
+# NestJS API + Prisma. Railway: Root Directory = apps/api; deploy monorepo: `railway up . --service api` (repo root)
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
