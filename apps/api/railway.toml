@@ -1,9 +1,8 @@
-# Railway: đặt Root Directory = apps/api (hoặc deploy service trỏ vào thư mục này)
+# Railway: Root Directory = apps/api (bắt buộc nếu deploy từ GitHub repo)
 [build]
-builder = "NIXPACKS"
-buildCommand = "npm install && npx prisma generate && npm run build"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "npx prisma db push && node dist/src/main.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10

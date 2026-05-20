@@ -46,7 +46,7 @@ jobs:
             --path-as-root \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service api \
-            --ci \
+            --detach \
             --message "deploy api from GitHub Actions"
 
   deploy-web:
@@ -73,5 +73,5 @@ jobs:
             --path-as-root \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service web \
-            --ci \
+            --detach \
             --message "deploy web from GitHub Actions"

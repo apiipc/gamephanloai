@@ -1,9 +1,8 @@
-# Railway: Root Directory = apps/web
+# Railway: Root Directory = apps/web (bắt buộc nếu deploy từ GitHub repo)
 [build]
-builder = "NIXPACKS"
-buildCommand = "npm install && npm run build"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "npm run start:railway"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
