@@ -219,6 +219,13 @@ export const adminApi = {
   trashItems: () => api<unknown[]>('/admin/trash-items'),
   createUser: (data: object) =>
     api('/admin/users', { method: 'POST', body: JSON.stringify(data) }),
+  updateUser: (id: string, data: object) =>
+    api<unknown>(`/admin/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  deleteUser: (id: string) =>
+    api<{ ok: boolean }>(`/admin/users/${id}`, { method: 'DELETE' }),
   importUsers: (users: object[]) =>
     api<{
       created: number;

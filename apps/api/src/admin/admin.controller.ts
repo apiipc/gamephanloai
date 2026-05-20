@@ -27,6 +27,30 @@ import { CurrentUser, JwtPayload, Roles } from '../common/decorators';
 import { JwtAuthGuard, RolesGuard } from '../common/guards';
 import { AdminService } from './admin.service';
 
+class UpdateUserDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  fullName?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  password?: string;
+
+  @IsOptional()
+  @IsString()
+  className?: string;
+
+  @IsOptional()
+  @IsString()
+  classId?: string;
+}
+
 class CreateUserDto {
   @IsEmail()
   email!: string;
@@ -132,6 +156,22 @@ export class AdminController {
   @Roles(Role.ORG_ADMIN, Role.SUPER_ADMIN, Role.TEACHER)
   createUser(@CurrentUser() user: JwtPayload, @Body() dto: CreateUserDto) {
     return this.admin.createUser(user, dto);
+  }
+
+  @Patch('users/:id')
+  @Roles(Role.ORG_ADMIN, Role.SUPER_ADMIN, Role.TEACHER)
+  updateUser(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+  ) {
+    return this.admin.updateUser(user, id, dto);
+  }
+
+  @Delete('users/:id')
+  @Roles(Role.ORG_ADMIN, Role.SUPER_ADMIN, Role.TEACHER)
+  deleteUser(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.admin.deleteUser(user, id);
   }
 
   @Post('users/import')

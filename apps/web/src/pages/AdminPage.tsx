@@ -205,6 +205,8 @@ export default function AdminPage() {
           sessionCount={dash.sessionCount}
           games={dash.games}
           playerScores={dash.playerScores}
+          onMessage={setMsg}
+          onDataChanged={() => load().catch(console.error)}
         />
       )}
 

@@ -2419,6 +2419,13 @@ th {
   color: var(--gray-500);
 }
 
+.admin-overview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
 .leaderboard-tabs {
   display: flex;
   flex-wrap: wrap;

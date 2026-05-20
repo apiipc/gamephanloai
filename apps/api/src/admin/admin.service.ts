@@ -27,6 +27,37 @@ export class AdminService {
     }
   }
 
+  private assertCanManageStudent(
+    actor: JwtPayload,
+    target: {
+      role: Role;
+      organizationId: string | null;
+      classId: string | null;
+      class: { teacherId: string | null } | null;
+    },
+  ) {
+    if (target.role !== 'STUDENT') {
+      throw new BadRequestException('Chỉ có thể sửa hoặc xóa tài khoản học sinh');
+    }
+    if (actor.role === 'TEACHER') {
+      if (!target.classId) throw new ForbiddenException();
+      if (target.class?.teacherId !== actor.sub) throw new ForbiddenException();
+    } else if (actor.role === 'ORG_ADMIN') {
+      if (!actor.organizationId || target.organizationId !== actor.organizationId) {
+        throw new ForbiddenException();
+      }
+    } else if (actor.role === 'SUPER_ADMIN') {
+      if (
+        actor.organizationId &&
+        target.organizationId !== actor.organizationId
+      ) {
+        throw new ForbiddenException();
+      }
+    } else {
+      throw new ForbiddenException();
+    }
+  }
+
   async log(user: JwtPayload, action: string, target?: string, metadata?: object) {
     await this.prisma.auditLog.create({
       data: {
@@ -417,6 +448,107 @@ export class AdminService {
     await this.log(user, 'CREATE_USER', created.id, { email: data.email });
     const { passwordHash: _, ...safe } = created;
     return safe;
+  }
+
+  async updateUser(
+    user: JwtPayload,
+    id: string,
+    dto: {
+      fullName?: string;
+      email?: string;
+      password?: string;
+      className?: string;
+      classId?: string;
+    },
+  ) {
+    const target = await this.prisma.user.findUnique({
+      where: { id },
+      include: { class: { select: { teacherId: true } } },
+    });
+    if (!target) throw new NotFoundException();
+    this.assertCanManageStudent(user, target);
+
+    const wantsClassChange =
+      (dto.className !== undefined && dto.className.trim() !== '') ||
+      dto.classId !== undefined;
+
+    let nextClassId = target.classId;
+    if (wantsClassChange) {
+      if (!target.organizationId) {
+        throw new BadRequestException('Học sinh chưa gắn tổ chức — không đổi lớp được');
+      }
+      nextClassId = await this.resolveClassForNewStudent(
+        user,
+        target.organizationId,
+        dto.classId,
+        dto.className !== undefined ? dto.className.trim() || undefined : undefined,
+      );
+    }
+
+    const data: {
+      fullName?: string;
+      email?: string;
+      passwordHash?: string;
+      classId?: string | null;
+    } = {};
+
+    if (dto.fullName !== undefined) data.fullName = dto.fullName.trim();
+
+    if (dto.email !== undefined) {
+      const emailNext = dto.email.trim().toLowerCase();
+      if (emailNext !== target.email) {
+        const exists = await this.prisma.user.findUnique({
+          where: { email: emailNext },
+        });
+        if (exists) throw new BadRequestException('Email đã được dùng');
+      }
+      data.email = emailNext;
+    }
+
+    if (dto.password !== undefined && dto.password.length > 0) {
+      data.passwordHash = await bcrypt.hash(dto.password, 10);
+    }
+
+    if (wantsClassChange) data.classId = nextClassId;
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('Không có thông tin cập nhật');
+    }
+
+    const updated = await this.prisma.user.update({ where: { id }, data });
+    await this.log(user, 'UPDATE_USER', id, { fields: Object.keys(data) });
+    const { passwordHash: __, ...safe } = updated;
+    return safe;
+  }
+
+  async deleteUser(user: JwtPayload, id: string) {
+    if (user.sub === id) {
+      throw new BadRequestException('Không thể xóa tài khoản đang đăng nhập');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id },
+      include: { class: { select: { teacherId: true } } },
+    });
+    if (!target) throw new NotFoundException();
+    this.assertCanManageStudent(user, target);
+
+    const quizOwned = await this.prisma.quizQuestion.count({
+      where: { createdById: id },
+    });
+    if (quizOwned > 0) {
+      throw new BadRequestException(
+        'Không xóa được: tài khoản đã tạo câu hỏi quiz — hãy xóa hoặc chuyển quyền trước',
+      );
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.auditLog.deleteMany({ where: { actorId: id } }),
+      this.prisma.user.delete({ where: { id } }),
+    ]);
+
+    await this.log(user, 'DELETE_USER', id, { email: target.email });
+    return { ok: true };
   }
 
   async importUsers(
