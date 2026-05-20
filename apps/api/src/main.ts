@@ -14,7 +14,7 @@ async function bootstrap() {
   if (typeof http?.set === 'function') {
     http.set('trust proxy', 1);
   }
-  /** Unified deploy: static web + API cùng origin. Dev vẫn proxy /api về backend này. */
+  /** Unified deploy: static web + API cùng origin; local dev vẫn proxy /api về backend này. */
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true }),
