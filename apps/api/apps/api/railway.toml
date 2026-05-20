@@ -2,7 +2,7 @@
 # File chính: ../../railway.toml (cùng nội dung).
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "../../Dockerfile"
 
 [deploy]
 restartPolicyType = "ON_FAILURE"
