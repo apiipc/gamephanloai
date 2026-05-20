@@ -6,6 +6,8 @@ Hướng dẫn chi tiết: **[RAILWAY.md](./RAILWAY.md)**
 
 Toàn bộ cách kết nối Railway: **[RAILWAY.md](./RAILWAY.md)** · [docs.railway.com](https://docs.railway.com/)
 
+**Nhanh — một lệnh trên máy** (có `RAILWAY_TOKEN`): [`scripts/railway-provision.sh`](./scripts/railway-provision.sh)
+
 ## Tóm tắt
 
 | Service | Root Directory | Vai trò |

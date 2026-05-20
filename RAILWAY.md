@@ -59,6 +59,18 @@ Repo đã có sẵn: `apps/api/railway.toml`, `apps/web/railway.toml`, `.github/
 
 **Lưu ý:** Không commit token; MCP chạy CLI Railway dưới tài khoản đã đăng nhập trên máy bạn.
 
+### Script một lệnh (biến + deploy từ máy bạn)
+
+File **[`scripts/railway-provision.sh`](./scripts/railway-provision.sh)** — cần **`export RAILWAY_TOKEN=...`** (Project Token), sau đó:
+
+```bash
+chmod +x scripts/railway-provision.sh
+./scripts/railway-provision.sh
+```
+
+Script set `DATABASE_URL` (tham chiếu Postgres), `JWT_SECRET`, `FRONTEND_URL`, `VITE_API_URL`, tùy chọn đồng bộ `gh secret set VITE_API_URL`, rồi `railway up` cho **api** và **web**.  
+**Dashboard:** mỗi service vẫn cần **Config as code = `railway.toml`** nếu deploy bằng `--path-as-root` (xem Cách 3).
+
 ---
 
 # Cách 1 — Dashboard + GitHub (khuyến nghị)
