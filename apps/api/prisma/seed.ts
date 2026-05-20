@@ -12,10 +12,9 @@ interface ManifestItem {
   imageUrl: string;
 }
 
-const manifestPath = path.join(
-  __dirname,
-  '../../web/public/assets/items-manifest.json',
-);
+const manifestPath = process.env.SEED_ITEMS_MANIFEST
+  ? path.resolve(process.env.SEED_ITEMS_MANIFEST)
+  : path.join(__dirname, '../../web/public/assets/items-manifest.json');
 const manifest: ManifestItem[] = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
 
 const EMOJI_FALLBACK: Record<string, string> = {

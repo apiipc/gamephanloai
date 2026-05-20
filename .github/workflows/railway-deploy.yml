@@ -1,19 +1,10 @@
-# Deploy API + Web lên Railway khi push main (hoặc chạy tay).
+# Deploy **web + API gộp** một image (Dockerfile gốc) lên Railway khi push main.
 #
-# Thiết lập 1 lần (trên máy bạn):
-#   gh secret set RAILWAY_TOKEN --repo apiipc/gamephanloai
-#   (dán Project Token từ Railway → Settings → Tokens)
+# Thiết lập 1 lần:
+#   gh secret set RAILWAY_TOKEN --repo your/repo
+# Trên Railway: một service (vd. api) — Root Directory trống — không cần RAILWAY_DOCKERFILE_PATH.
 #
-# Sau khi API có domain, thêm:
-#   gh secret set VITE_API_URL --repo apiipc/gamephanloai
-#   (vd. https://api-production-xxxx.up.railway.app)
-#
-# Trên Railway — quan trọng (tránh watch paths + đủ context Docker):
-#   - Service **api** và **web**: Settings → Source → **Root Directory để TRỐNG** (repo root).
-#   - Biến: **web** cần `RAILWAY_DOCKERFILE_PATH=Dockerfile.web`. **api** dùng `Dockerfile` ở gốc repo.
-#   - Có thể xóa / để trống **Config as code** (railway.toml) nếu chỉ dùng Dockerfile.
-#
-# Script local: ./scripts/railway-provision.sh (set biến + deploy)
+# Biến FRONTEND_URL / DATABASE_URL / JWT_SECRET: set trên Railway (vd. script railway-provision.sh).
 
 name: Deploy to Railway
 
@@ -32,16 +23,17 @@ on:
 
 env:
   RAILWAY_ENVIRONMENT: production
+  RAILWAY_SERVICE: api
 
 jobs:
-  deploy-api:
-    name: Deploy API
+  deploy:
+    name: Deploy unified stack
     runs-on: ubuntu-latest
     container: ghcr.io/railwayapp/cli:latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy apps/api
+      - name: railway up
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
@@ -51,32 +43,6 @@ jobs:
           fi
           railway up . \
             --environment "$RAILWAY_ENVIRONMENT" \
-            --service api \
+            --service "$RAILWAY_SERVICE" \
             --detach \
-            --message "deploy api from GitHub Actions"
-
-  deploy-web:
-    name: Deploy Web
-    needs: deploy-api
-    runs-on: ubuntu-latest
-    container: ghcr.io/railwayapp/cli:latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy apps/web
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-        run: |
-          if [ -z "$RAILWAY_TOKEN" ]; then
-            echo "::error::Thiếu GitHub secret RAILWAY_TOKEN"
-            exit 1
-          fi
-          if [ -n "$VITE_API_URL" ]; then
-            export VITE_API_URL
-          fi
-          railway up . \
-            --environment "$RAILWAY_ENVIRONMENT" \
-            --service web \
-            --detach \
-            --message "deploy web from GitHub Actions"
+            --message "unified deploy from GitHub Actions"

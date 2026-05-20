@@ -1,6 +1,6 @@
 /**
  * Vite: dev server + production **build** (`vite build` → `dist/`).
- * Railway serves `dist/` with `serve` (see Dockerfile) — Vite does not run on the production host.
+ * Production mặc định: Nest serve `dist/` (Dockerfile gốc repo) — không chạy Vite trên host.
  */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -13,7 +13,6 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },

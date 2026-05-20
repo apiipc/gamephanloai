@@ -1,4 +1,6 @@
-# Railway: Root Directory = apps/web (bắt buộc nếu deploy từ GitHub repo)
+# Railway (legacy): deploy **chỉ** frontend tĩnh — dùng khi tách service `web`.
+# Khuyến nghị: một service với Dockerfile ở gốc repo (không cần file này).
+
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile.web"

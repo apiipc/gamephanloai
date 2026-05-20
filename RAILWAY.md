@@ -12,47 +12,47 @@ Hướng dẫn cho repo **[gamephanloai](https://github.com/apiipc/gamephanloai)
 
 ---
 
-## Kiến trúc (3 service)
+## Kiến trúc (khuyến nghị: **2 service** — Postgres + app)
 
 ```text
 ┌─────────────────┐
 │   PostgreSQL    │  DATABASE_URL
 └────────┬────────┘
          │
-┌────────▼────────┐     VITE_API_URL (lúc build web)
-│  api (apps/api) │◄────────────────────────────┐
-│  NestJS + Prisma│                             │
-└────────┬────────┘                             │
-         │ FRONTEND_URL (CORS)                  │
-┌────────▼────────┐                             │
-│ web (apps/web)  │  URL công khai → học sinh  │
-│  React + Vite   │────────────────────────────┘
-└─────────────────┘
+┌────────▼──────────────────────────────────────────┐
+│  api (hoặc tên bạn đặt)                            │
+│  NestJS + Prisma + phục vụ React `dist` (SPA)    │
+│  API: /api/...  ·  Web: /  (cùng origin, 1 URL)   │
+└────────────────────────────────────────────────────┘
 ```
 
-Không cần Vercel — web + API + DB đều trên Railway.
+- [**`Dockerfile`**](./Dockerfile) ở **gốc repo**: build Vite (`apps/web`) + Nest (`apps/api`), copy `web/dist` → `/app/web-dist`, set `WEB_DIST_PATH`.
+- Không cần `VITE_API_URL`: frontend gọi **`/api/...`** trên cùng host.
+- Biến **`FRONTEND_URL`** trên service app = **URL public** bạn Generate Domain (cùng URL đó để mở game — CORS đúng).
+
+**Tách web + API riêng (cũ):** vẫn có [**`Dockerfile.web`**](./Dockerfile.web) + `RAILWAY_DOCKERFILE_PATH` + `VITE_API_URL`; chỉ dùng nếu bạn cố ý giữ 2 service.
+
+Không cần Vercel — app + DB trên Railway.
 
 ---
 
 ## Cách deploy khuyến nghị (monorepo + CLI / GitHub Actions)
 
-Dùng **Dockerfile ở gốc repo** (tên chuẩn `Dockerfile` cho **api**) + **`Dockerfile.web`** + biến **`RAILWAY_DOCKERFILE_PATH`** cho **web** (theo [Railway monorepo / Docker](https://docs.railway.com/deployments/monorepo)):
+| File | Dùng khi |
+|------|-----------|
+| **[`Dockerfile`](./Dockerfile)** | **Mặc định** — một service: web + API (Root Directory **trống**, **không** `RAILWAY_DOCKERFILE_PATH`) |
+| **[`Dockerfile.web`](./Dockerfile.web)** | Chỉ khi deploy **riêng** service static `web` |
 
-| File | Service Railway |
-|------|-----------------|
-| **[`Dockerfile`](./Dockerfile)** | **api** — Railway tự tìm `Dockerfile` ở gốc (không cần `RAILWAY_DOCKERFILE_PATH`) |
-| **[`Dockerfile.web`](./Dockerfile.web)** | **web** — **`RAILWAY_DOCKERFILE_PATH=Dockerfile.web`** |
+**Trên dashboard (một service app):**
 
-**Trên dashboard (mỗi service `api` và `web`):**
+1. **Settings → Source → Root Directory:** để **trống**.
+2. **Variables:** `DATABASE_URL`, `JWT_SECRET`, **`FRONTEND_URL`** = URL public của chính service này (sau Generate Domain). **Không** cần `VITE_API_URL`.
+3. **Watch paths:** xóa hoặc `**`.
+4. Service **`web`** / **`api`** cũ (tách) có thể **xóa** hoặc tắt deploy sau khi đã chuyển.
 
-1. **Settings → Source → Root Directory:** để **trống** (clone cả repo).
-2. **Variables (web):** **`RAILWAY_DOCKERFILE_PATH` = `Dockerfile.web`**. **api** không cần biến này nếu dùng [`Dockerfile`](./Dockerfile) ở gốc.
-3. **Watch paths:** xóa hoặc `**` (pattern kiểu `/apps/api/**` + `railway up .` từng khiến snapshot gần rỗng).
-4. **Config as code:** có thể **tắt** (không bắt buộc `railway.toml` khi đã dùng Dockerfile path).
+Sau đó **`./scripts/railway-provision.sh`** (có `RAILWAY_TOKEN` + **`RAILWAY_APP_URL`**) hoặc push `main` → GitHub Actions (`railway up .` một lần, service `api` mặc định — đổi bằng biến trong workflow nếu cần).
 
-Sau đó **`./scripts/railway-provision.sh`** (có `RAILWAY_TOKEN`) hoặc push `main` để GitHub Actions chạy `railway up .`.
-
-Các file **`apps/*/railway.toml`** vẫn hữu ích nếu bạn deploy **chỉ từ GitHub** với **Root Directory** = `apps/api` / `apps/web`.
+Các file **`apps/*/railway.toml`** vẫn hữu ích nếu deploy chỉ subfolder (lệ thừa khi dùng Dockerfile gốc).
 
 ---
 
@@ -66,7 +66,7 @@ Các file **`apps/*/railway.toml`** vẫn hữu ích nếu bạn deploy **chỉ 
 | **4. Config file** | Build/start cố định | [Config as code](https://docs.railway.com/deployments/reference) |
 | **5. AI trong Cursor** | Hỏi AI deploy, log, biến môi trường | [Railway + AI](https://docs.railway.com/ai.md) |
 
-Repo: **[`Dockerfile`](./Dockerfile)** (api), **[`Dockerfile.web`](./Dockerfile.web)** (web), `apps/api/railway.toml`, `apps/web/railway.toml`, [`.github/workflows/railway-deploy.yml`](./.github/workflows/railway-deploy.yml), **`scripts/railway-provision.sh`**.
+Repo: **[`Dockerfile`](./Dockerfile)** (unified), **[`Dockerfile.web`](./Dockerfile.web)** (legacy split), [`.github/workflows/railway-deploy.yml`](./.github/workflows/railway-deploy.yml), **`scripts/railway-provision.sh`**.
 
 ### Cách 5 — MCP + skill `use-railway` (Cursor)
 
@@ -83,15 +83,14 @@ Repo: **[`Dockerfile`](./Dockerfile)** (api), **[`Dockerfile.web`](./Dockerfile.
 
 ### Script một lệnh (biến + deploy từ máy bạn)
 
-File **[`scripts/railway-provision.sh`](./scripts/railway-provision.sh)** — cần **`export RAILWAY_TOKEN=...`** (Project Token), sau đó:
+File **[`scripts/railway-provision.sh`](./scripts/railway-provision.sh)** — cần **`export RAILWAY_TOKEN=...`**, **`export RAILWAY_APP_URL=https://...`** (URL public service sau Generate Domain), sau đó:
 
 ```bash
 chmod +x scripts/railway-provision.sh
 ./scripts/railway-provision.sh
 ```
 
-Script set biến (gồm **`RAILWAY_DOCKERFILE_PATH`**) và chạy **`railway up .`** từ gốc repo.  
-Xem mục **Cách deploy khuyến nghị** — **Root Directory phải trống** trên cả hai service.
+Script set `DATABASE_URL`, `FRONTEND_URL`, `JWT_SECRET` và chạy **`railway up .`** một lần. **Root Directory trống** trên service app.
 
 ---
 
@@ -113,48 +112,28 @@ Nếu báo **Deploys paused** → kiểm tra [billing / trial](https://docs.rail
 Railway tự tạo biến `DATABASE_URL` cho database đó.  
 Docs: [PostgreSQL](https://docs.railway.com/databases/postgresql).
 
-### 1.3 Service **api** (NestJS)
-
-1. **+ New** → **GitHub Repo** → cùng repo `gamephanloai`.
-2. Đổi tên service thành **`api`** (Settings → name).
-3. **Settings** → **Source** + **Variables** (khuyến nghị giống mục [Cách deploy khuyến nghị](#cách-deploy-khuyến-nghị-monorepo--cli--github-actions)):
-   - **Root Directory để trống** · file **`Dockerfile`** ở gốc repo cho API · Branch `main`.
-   - *Hoặc chỉ dùng GitHub build:* Root **`apps/api`**, config **`/apps/api/railway.toml`**.
-4. **Variables** (bổ sung):
-
-| Biến | Giá trị |
-|------|---------|
-| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` *(đổi `Postgres` nếu tên service DB khác)* |
-| `JWT_SECRET` | Chuỗi bí mật dài (tự đặt) |
-| `FRONTEND_URL` | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}` *(thêm sau khi có service web)* |
-
-Docs biến tham chiếu: [Variables Reference](https://docs.railway.com/variables/reference).
-
-5. **Networking** → **Generate Domain** → copy URL API.
-
-Docs NestJS: [Nest.js on Railway](https://docs.railway.com/guides/nestjs).
-
-### 1.4 Service **web** (React)
+### 1.3 Service **app** (Nest + React — unified)
 
 1. **+ New** → **GitHub Repo** → `gamephanloai`.
-2. Đặt tên: **`web`**.
-3. **Source:** **Root Directory trống** · **`RAILWAY_DOCKERFILE_PATH=Dockerfile.web`** (hoặc GitHub-only: root **`apps/web`** + `/apps/web/railway.toml`).
+2. Đặt tên (vd. **`api`** — khớp với `--service` trong Actions nếu có).
+3. **Source:** **Root Directory để trống** · Dockerfile gốc repo (mặc định [`Dockerfile`](./Dockerfile)) · Branch `main`.
 4. **Variables:**
 
 | Biến | Giá trị |
 |------|---------|
-| `VITE_API_URL` | `https://${{api.RAILWAY_PUBLIC_DOMAIN}}` |
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
+| `JWT_SECRET` | Chuỗi bí mật dài |
+| `FRONTEND_URL` | URL public của **chính service này** (sau bước 5). Có thể dùng `${{tên_service.RAILWAY_PUBLIC_DOMAIN}}` với `https://` trước |
 
-5. **Config as code:** chỉ cần nếu không dùng `Dockerfile.web` ở gốc repo.
+5. **Networking** → **Generate Domain** — **đây là link game** (và API tại `/api/...`). Cập nhật lại `FRONTEND_URL` cho khớp URL này rồi **Redeploy** nếu đã đổi.
 
-6. **Networking** → **Generate Domain** → **đây là link game**.
-7. Quay lại service **api** → sửa `FRONTEND_URL` → **Redeploy** API.
+6. *Tuỳ chọn:* xóa hoặc dừng các service **`web`** / **`api`** cũ (bản tách) + Postgres thừa để tránh nhầm `DATABASE_URL`.
 
-Docs monorepo: [Monorepo](https://docs.railway.com/deployments/monorepo).
+Docs NestJS: [Nest.js on Railway](https://docs.railway.com/guides/nestjs).
 
-### 1.5 Seed database (một lần)
+### 1.4 Seed database (một lần)
 
-Service **api** → **Shell** (hoặc [CLI `railway shell`](https://docs.railway.com/cli/shell)):
+Trên **cùng service app** → **Shell**:
 
 ```bash
 npm run db:seed
@@ -162,10 +141,11 @@ npm run db:seed
 
 Tài khoản demo — mật khẩu **`123456`**: `hs1@game.local`, `admin@game.local`, …
 
-### 1.6 Kiểm tra
+### 1.5 Kiểm tra
 
-- Mở URL **web** → màn đăng nhập.
+- Mở URL public của service app → màn đăng nhập.
 - Đăng nhập → chơi phân loại / quiz / vòng quay.
+- (Tuỳ chọn) `curl -X POST https://<YOUR_URL>/api/auth/login -H "Content-Type: application/json" -d '{"email":"admin@game.local","password":"123456"}'` → JSON có `token`.
 
 ---
 
@@ -194,22 +174,18 @@ cd /Users/hainguyen/Downloads/game
 Hoặc thủ công:
 
 ```bash
-cd apps/api
+cd /Users/hainguyen/Downloads/game
 railway link -p 1323cca9-cdce-4443-b158-f6f7c903a453 -e production -s api
-
-cd ../web
-railway link -p 1323cca9-cdce-4443-b158-f6f7c903a453 -e production -s web
 ```
 
 ### 2.3 Deploy từ máy
 
 ```bash
-cd apps/api
-railway up -d
-
-cd ../web
-railway up -d
+cd /Users/hainguyen/Downloads/game
+railway up . --service api --detach
 ```
+
+*(Đổi `api` nếu tên service trên Railway khác.)*
 
 Xem log: `railway logs` · Trạng thái: `railway status`
 
@@ -233,12 +209,7 @@ gh secret set RAILWAY_TOKEN --repo apiipc/gamephanloai
 # Dán Project Token từ Railway
 ```
 
-Sau khi API có domain:
-
-```bash
-gh secret set VITE_API_URL --repo apiipc/gamephanloai
-# https://xxx.up.railway.app
-```
+**Không** cần `VITE_API_URL` khi deploy **một service** (Dockerfile gốc): frontend gọi `/api` cùng origin.
 
 ### 3.2 Chạy deploy
 
@@ -250,7 +221,7 @@ Hoặc **push** lên nhánh `main` → workflow tự chạy.
 
 Xem log: GitHub → **Actions** → **Deploy to Railway**.
 
-**Trên Railway:** đã tạo **`api`** / **`web`**, **Root Directory trống**, **web** có **`RAILWAY_DOCKERFILE_PATH=Dockerfile.web`**, **`RAILWAY_TOKEN`** trong GitHub secrets. **api** dùng `Dockerfile` ở gốc repo.
+**Trên Railway:** một service app (mặc định workflow dùng tên **`api`** — đổi biến `RAILWAY_SERVICE` trong workflow nếu khác), **Root Directory trống**, **`RAILWAY_TOKEN`** trong GitHub secrets. **Không** cần `RAILWAY_DOCKERFILE_PATH` / `Dockerfile.web` cho luồng unified.
 
 Chi tiết: mục [Cách deploy khuyến nghị](#cách-deploy-khuyến-nghị-monorepo--cli--github-actions).
 
@@ -269,16 +240,16 @@ Docs: [Config as code](https://docs.railway.com/deployments/reference) · [Build
 
 ---
 
-## Biến môi trường — tóm tắt
+## Biến môi trường — tóm tắt (unified)
 
-| Service | Biến | Mục đích |
-|---------|------|----------|
+| Service app | Biến | Mục đích |
+|-------------|------|----------|
 | **Postgres** | `DATABASE_URL` | Tự sinh |
-| **api** | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
-| **api** | `JWT_SECRET` | Ký JWT đăng nhập |
-| **api** | `FRONTEND_URL` | CORS — domain web |
-| **web** | `RAILWAY_DOCKERFILE_PATH` | `Dockerfile.web` (bắt buộc khi Root Directory trống) |
-| **web** | `VITE_API_URL` | Build React gọi API (`https://...`) |
+| **app** | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
+| **app** | `JWT_SECRET` | Ký JWT đăng nhập |
+| **app** | `FRONTEND_URL` | CORS — **URL public chính service này** (thường trùng link game) |
+
+**Tách web + api (legacy):** thêm service **web** với `RAILWAY_DOCKERFILE_PATH=Dockerfile.web` và `VITE_API_URL`; **api** tách với `FRONTEND_URL` = URL web.
 
 Cú pháp `${{service.BIEN}}`: [Variable Reference](https://docs.railway.com/variables/reference).
 
@@ -286,11 +257,8 @@ Cú pháp `${{service.BIEN}}`: [Variable Reference](https://docs.railway.com/var
 
 ## Domain & networking
 
-- Mỗi service → **Settings** → **Networking** → **Generate Domain**.
+- Service app → **Settings** → **Networking** → **Generate Domain** → **một URL** cho game và API (`/api/...`).
 - Docs: [Domains](https://docs.railway.com/networking/domains) · [Public networking](https://docs.railway.com/networking/public-networking).
-- API và Web mỗi service **một URL** riêng.
-
----
 
 ## Dev local (sau khi có Postgres)
 
@@ -314,17 +282,48 @@ Schema production dùng **PostgreSQL** (không còn SQLite `dev.db`).
 | Triệu chứng | Nguyên nhân | Cách xử lý |
 |-------------|-------------|------------|
 | **Deploys paused** | Giới hạn / billing Railway | Đợi, kiểm tra plan, billing |
-| Build `nest build` khi deploy web | Root Directory sai | Web = `apps/web`, API = `apps/api` |
+| Build `nest build` khi deploy web | Root Directory sai / Dockerfile nhầm | Root Directory **trống**; web có `RAILWAY_DOCKERFILE_PATH=Dockerfile.web` |
 | Trang **404** | Deploy nhầm API làm static | Chỉ `apps/web` serve `dist` |
-| Đăng nhập lỗi | Web chưa có `VITE_API_URL` | Set biến + redeploy web |
-| CORS lỗi | `FRONTEND_URL` sai | `https://` + domain web, redeploy API |  
+| Đăng nhập lỗi / spinner vô hạn | Web build thiếu `VITE_API_URL`, hoặc DB chưa seed, hoặc CORS | Xem [mục chi tiết bên dưới](#không-đăng-nhập-được-dù-dashboard-xanh) |
+| CORS lỗi (console: blocked by CORS) | `FRONTEND_URL` không khớp URL web | Đúng `https://…up.railway.app` (không `/` cuối), trùng subdomain bạn mở trên trình duyệt, redeploy **api** |  
 | **couldn't locate the dockerfile at path Dockerfile** | Railway mặc định tìm `Dockerfile` ở **gốc repo**; biến `RAILWAY_DOCKERFILE_PATH` chưa áp dụng hoặc trỏ nhầm | Repo phải có [`Dockerfile`](./Dockerfile) cho **api**; **web** giữ `RAILWAY_DOCKERFILE_PATH=Dockerfile.web` |
 | Build skip / snapshot nhỏ | **Watch paths** không khớp `railway up .` | Root Directory **trống**, xóa/sửa Watch paths; xem [mục khuyến nghị](#cách-deploy-khuyến-nghị-monorepo--cli--github-actions) |
 | **`prefix not found`** (CLI) | `railway up .` khi **Root Directory** vẫn là `apps/...` | Để Root Directory **trống** hoặc chỉ dùng `railway up ./apps/<svc> --path-as-root` với config tương thích |
 | `Unauthorized` CLI | Chưa login / token hỏng | `railway login` hoặc token mới |
-| Actions fail | Thiếu secret / chưa có service | `gh secret set` + tạo `api`/`web` trên Railway |
+| Actions fail | Thiếu `RAILWAY_TOKEN` / chưa có service | `gh secret set RAILWAY_TOKEN` + tạo service app trên Railway |
 
 Docs: [Troubleshooting](https://docs.railway.com/deployments/troubleshooting) · [Application failed to respond](https://docs.railway.com/networking/troubleshooting/application-failed-to-respond)
+
+### Không đăng nhập được dù dashboard xanh
+
+1. **Mở game bằng đúng URL mà bạn đã cấu hình**  
+   Biến **`FRONTEND_URL`** trên service **api** phải **trùng** `Origin` khi bạn mở trang (vd. `https://web-production-xxxx.up.railway.app`). Nếu bạn mở bản custom domain khác mà quên thêm vào `FRONTEND_URL` (hoặc thêm dư dấu `/` cuối), trình duyệt sẽ chặn CORS và đăng nhập không chạy.
+
+2. **Đúng URL API (tách web + api cũ)**  
+   Nếu bạn vẫn deploy **hai** service: bản web build tĩnh cần **`VITE_API_URL`** = URL API; thiếu biến → gọi `/api` trên host `serve` → lỗi.  
+   **Khuyến nghị:** dùng **[một service](./Dockerfile)** — frontend gọi `/api` cùng origin, không cần `VITE_API_URL`.
+
+3. **API có thật sự đang chạy**  
+   Nếu log không có `App (API + web) running on ...` hoặc `API running on ...`, kiểm tra **Deployments → Logs**. Trên trình duyệt, request **`/api/auth/login`** phải trả **200** và JSON có `token` (bản unified).
+
+4. **Database đã có tài khoản demo**  
+   Chạy **một lần** trong shell của service **api** (đúng Postgres mà api đang dùng):
+
+   ```bash
+   npm run db:seed
+   ```
+
+   Tài khoản sau seed (mật khẩu **`123456`**): **`admin@game.local`**, `school@game.local`, … (xem [`apps/api/prisma/seed.ts`](./apps/api/prisma/seed.ts)). Nếu **hai** Postgres trong project, api phải nối đúng cái bạn đã seed; cái còn lại có thể để trống user → luôn báo sai mật khẩu.
+
+5. **Kiểm tra nhanh bằng curl** (thay URL cho đúng — bản **unified** thêm prefix `/api`):
+
+   ```bash
+   curl -sS -X POST "https://YOUR_APP_URL/api/auth/login" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"admin@game.local","password":"123456"}'
+   ```
+
+   Phải nhận JSON có `"token"`. Nếu `401` → sai mật khẩu hoặc chưa seed; nếu `404`/HTML → URL sai hoặc service không phải Nest.
 
 ---
 
@@ -346,10 +345,8 @@ Docs: [Troubleshooting](https://docs.railway.com/deployments/troubleshooting) ·
 ## Checklist nhanh
 
 - [ ] Project Railway + repo GitHub đã nối  
-- [ ] PostgreSQL đã tạo  
-- [ ] Service **`api`** — **Root Directory trống** — gốc repo có **`Dockerfile`** — `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`  
-- [ ] Service **`web`** — **Root Directory trống** — **`RAILWAY_DOCKERFILE_PATH=Dockerfile.web`** — `VITE_API_URL`  
-- [ ] Cả hai đã **Generate Domain**  
-- [ ] `FRONTEND_URL` trên API = URL web  
-- [ ] `npm run db:seed` trên API (một lần)  
-- [ ] Mở URL **web** → đăng nhập thử  
+- [ ] PostgreSQL đã tạo (một instance; xóa bản thừa nếu dễ nhầm)  
+- [ ] **Một** service app — **Root Directory trống** — [`Dockerfile`](./Dockerfile) ở gốc — `DATABASE_URL`, `JWT_SECRET`, **`FRONTEND_URL` = URL public chính service đó**  
+- [ ] Đã **Generate Domain** cho service app  
+- [ ] `npm run db:seed` trong shell service app (một lần)  
+- [ ] Mở URL app → đăng nhập thử  

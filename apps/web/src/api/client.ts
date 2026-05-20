@@ -1,4 +1,8 @@
-/** Dev: Vite proxy `/api` → API local. Production (Railway, …): set `VITE_API_URL` (no trailing `/`). */
+/**
+ * Dev: Vite proxy `/api` → Nest (cùng prefix `/api`).
+ * Production (Railway 1 service): để trống / không set `VITE_API_URL` → gọi `/api` cùng origin.
+ * Deploy tách web+api cũ: set `VITE_API_URL` = URL API (không dấu `/` cuối).
+ */
 const rawBase = import.meta.env.VITE_API_URL || '/api';
 const API_BASE =
   rawBase === '/api' ? rawBase : rawBase.replace(/\/+$/, '');

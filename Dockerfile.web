@@ -1,3 +1,6 @@
+# Web-only (legacy) — khi bạn **tách** service static riêng.
+# Khuyến nghị: dùng Dockerfile ở gốc repo — một service (web + API).
+
 # Web — build từ **gốc monorepo** (Railway: Root Directory để trống, RAILWAY_DOCKERFILE_PATH=Dockerfile.web)
 FROM node:20-alpine AS build
 WORKDIR /app
@@ -6,6 +9,11 @@ RUN npm install
 COPY apps/web/ .
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+# Bắt buộc trên Railway (web + api riêng): biến này phải có lúc build, vd https://api-xxx.up.railway.app
+# Nếu trống, frontend gọi /api trên chính host web → serve trả HTML, đăng nhập sẽ lỗi.
+RUN if [ -z "$VITE_API_URL" ]; then \
+  echo "WARNING: VITE_API_URL rỗng khi build — set biến trên service web (Railway) và redeploy"; \
+fi
 RUN npm run build
 
 FROM node:20-alpine

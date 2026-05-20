@@ -18,7 +18,16 @@ export const TRASH_EMOJI_FALLBACK: Record<TrashCategory, string> = {
 const ALLOWED_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
 
 function resolveItemsRoot(): string | null {
+  const explicit = process.env.TRASH_ITEMS_ROOT;
+  if (explicit) {
+    const p = path.resolve(explicit);
+    if (fs.existsSync(p)) return p;
+  }
+  const webDist = process.env.WEB_DIST_PATH;
   const candidates = [
+    ...(webDist
+      ? [path.join(path.resolve(webDist), 'assets', 'items')]
+      : []),
     path.resolve(process.cwd(), 'apps/web/public/assets/items'),
     path.resolve(process.cwd(), '../web/public/assets/items'),
     path.resolve(process.cwd(), 'public/assets/items'),

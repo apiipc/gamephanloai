@@ -1,32 +1,29 @@
 # Deploy production
 
-Toàn bộ chạy trên **Railway** (PostgreSQL + API + Web).
+Toàn bộ chạy trên **Railway** (PostgreSQL + **một** service: Nest phục vụ API `/api` và web tĩnh).
 
-Hướng dẫn chi tiết: **[RAILWAY.md](./RAILWAY.md)**
+Hướng dẫn chi tiết: **[RAILWAY.md](./RAILWAY.md)** · [docs.railway.com](https://docs.railway.com/)
 
-Toàn bộ cách kết nối Railway: **[RAILWAY.md](./RAILWAY.md)** · [docs.railway.com](https://docs.railway.com/)
-
-**Nhanh — một lệnh trên máy** (có `RAILWAY_TOKEN`): [`scripts/railway-provision.sh`](./scripts/railway-provision.sh) — cần **Root Directory trống** + `RAILWAY_DOCKERFILE_PATH` trên Railway (xem [RAILWAY.md](./RAILWAY.md)).
+**Nhanh — một lệnh trên máy** (có `RAILWAY_TOKEN` + `RAILWAY_APP_URL`): [`scripts/railway-provision.sh`](./scripts/railway-provision.sh) — **Root Directory trống** trên service app (xem [RAILWAY.md](./RAILWAY.md)).
 
 ## Tóm tắt
 
-| Service | Root Directory | Vai trò |
-|---------|----------------|---------|
+| Thành phần | Root Directory | Vai trò |
+|------------|----------------|---------|
 | PostgreSQL | *(plugin)* | Database |
-| `api` | `apps/api` | NestJS API |
-| `web` | `apps/web` | React game (URL cho người chơi) |
+| App (vd. `api`) | **để trống** | [`Dockerfile`](./Dockerfile): Vite build + Nest, một URL |
+
+**Legacy:** có thể tách `web` ([`Dockerfile.web`](./Dockerfile.web)) + `VITE_API_URL`; không cần nếu dùng unified.
 
 ## Vite vẫn có trong repo — có mâu thuẫn với Railway không?
 
-**Không.** Railway là **nơi chạy** (host) build production; **Vite** là **công cụ build** giao diện React (giống webpack/esbuild).
+**Không.** Railway chạy **image đã build**; **Vite** chỉ chạy trong bước `docker build` (xem [`Dockerfile`](./Dockerfile)).
 
 | Giai đoạn | Công cụ | Việc làm |
-|-----------|---------|-----------|
-| Dev trên máy | `vite` (`npm run dev`) | Dev server + proxy `/api` → API local |
-| Build (`npm run build` / Docker build) | `vite build` + TypeScript | Sinh thư mục **`dist/`** (HTML/JS/CSS tĩnh) |
-| Production trên Railway | **`serve`** trong `apps/web/Dockerfile` | Chỉ phục vụ file trong `dist/`, **không** chạy Vite |
-
-Tóm lại: trên Railway, user chỉ tải file tĩnh đã build sẵn; Vite không chạy như server production.
+|-----------|---------|----------|
+| Dev trên máy | `vite` (`npm run dev`) | Dev server + proxy `/api` → Nest |
+| Docker build | `vite build` trong stage `web-build` | Sinh `dist/` → copy vào image |
+| Production | **Nest** + `@nestjs/serve-static` | Phục vụ `dist` + API tại `/api` |
 
 ## Dev local
 

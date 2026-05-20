@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
-# Cấu hình nhanh Railway + deploy (chạy trên máy có RAILWAY_TOKEN).
+# Cấu hình nhanh Railway + deploy **một service** (web + API gộp, Dockerfile gốc).
 #
 #   export RAILWAY_TOKEN="..."   # Project Token: Railway → Project → Settings → Tokens
+#   export RAILWAY_APP_URL="https://<domain-service-bạn>.up.railway.app"
 #   ./scripts/railway-provision.sh
 #
-# Bắt buộc trên Railway (một lần): service **api** và **web** → Settings → Source →
-#   **Root Directory = để trống** (clone cả repo). Nếu còn `apps/api` / `apps/web`,
-#   CLI `railway up .` sẽ lỗi hoặc Docker COPY sai.
+# Bắt buộc trên Railway: service (mặc định **api**) → Settings → Source → **Root Directory = để trống**.
 #
 # Tuỳ chọn:
 #   RAILWAY_JWT_SECRET   — nếu không set, script tạo chuỗi ngẫu nhiên (in ra một lần).
 #   RAILWAY_POSTGRES_SERVICE — mặc định Postgres (đổi nếu DB tên khác).
-#   SKIP_GH_SECRET=1     — không gọi gh secret set VITE_API_URL
+#   RAILWAY_SERVICE      — tên service (mặc định `api`).
 #   SKIP_DEPLOY=1        — chỉ set biến, không railway up
 #
 set -euo pipefail
@@ -24,12 +23,17 @@ if [[ -z "$PROJECT_ID" && -f "$ROOT/.railway/project.json" ]]; then
 fi
 ENV="${RAILWAY_ENVIRONMENT:-production}"
 POSTGRES="${RAILWAY_POSTGRES_SERVICE:-Postgres}"
+SERVICE="${RAILWAY_SERVICE:-api}"
 
-WEB_URL="${RAILWAY_WEB_URL:-https://web-production-831d3.up.railway.app}"
-API_URL="${RAILWAY_API_URL:-https://api-production-cafe.up.railway.app}"
+APP_URL="${RAILWAY_APP_URL:-}"
+if [[ -z "$APP_URL" ]]; then
+  echo "Thiếu RAILWAY_APP_URL (URL public của service sau Generate Domain), vd:"
+  echo "  export RAILWAY_APP_URL=\"https://api-production-xxxx.up.railway.app\""
+  exit 1
+fi
 
 if [[ -z "${RAILWAY_TOKEN:-}" ]]; then
-  echo "Thiếu RAILWAY_TOKEN. Railway → Project game → Settings → Tokens"
+  echo "Thiếu RAILWAY_TOKEN. Railway → Project → Settings → Tokens"
   exit 1
 fi
 if [[ -z "$PROJECT_ID" ]]; then
@@ -37,7 +41,7 @@ if [[ -z "$PROJECT_ID" ]]; then
   exit 1
 fi
 
-echo "→ Project: $PROJECT_ID · Environment: $ENV"
+echo "→ Project: $PROJECT_ID · Environment: $ENV · Service: $SERVICE"
 
 JWT="${RAILWAY_JWT_SECRET:-}"
 if [[ -z "$JWT" ]]; then
@@ -50,67 +54,40 @@ if [[ -z "$JWT" ]]; then
 fi
 
 DB_REF="\${{${POSTGRES}.DATABASE_URL}}"
-echo "→ api: DATABASE_URL, FRONTEND_URL, JWT_SECRET (Docker mặc định: Dockerfile ở gốc repo)"
+echo "→ ${SERVICE}: DATABASE_URL, FRONTEND_URL, JWT_SECRET (Dockerfile unified ở gốc repo)"
 
-# Bỏ RAILWAY_DOCKERFILE_PATH cũ trỏ tới Dockerfile.api (file đã đổi tên).
-$CLI variable delete RAILWAY_DOCKERFILE_PATH --service api --environment "$ENV" --project "$PROJECT_ID" 2>/dev/null || true
+# Không dùng Dockerfile.web trên service chính.
+$CLI variable delete RAILWAY_DOCKERFILE_PATH --service "$SERVICE" --environment "$ENV" --project "$PROJECT_ID" 2>/dev/null || true
 
 # shellcheck disable=SC2086
 $CLI variable set \
   "DATABASE_URL=${DB_REF}" \
-  "FRONTEND_URL=${WEB_URL}" \
-  --service api \
+  "FRONTEND_URL=${APP_URL}" \
+  --service "$SERVICE" \
   --environment "$ENV" \
   --project "$PROJECT_ID"
 
 printf '%s' "$JWT" | $CLI variable set JWT_SECRET --stdin \
-  --service api \
+  --service "$SERVICE" \
   --environment "$ENV" \
   --project "$PROJECT_ID"
-
-echo "→ web: VITE_API_URL, RAILWAY_DOCKERFILE_PATH"
-
-# shellcheck disable=SC2086
-$CLI variable set \
-  "VITE_API_URL=${API_URL}" \
-  "RAILWAY_DOCKERFILE_PATH=Dockerfile.web" \
-  --service web \
-  --environment "$ENV" \
-  --project "$PROJECT_ID"
-
-if [[ "${SKIP_GH_SECRET:-}" != "1" ]] && command -v gh >/dev/null 2>&1; then
-  if gh auth status &>/dev/null; then
-    echo "→ gh secret set VITE_API_URL"
-    printf '%s' "$API_URL" | gh secret set VITE_API_URL 2>/dev/null || \
-      echo "   (bỏ qua nếu không có quyền repo)"
-  else
-    echo "→ chưa gh auth login — bỏ qua gh secret"
-  fi
-else
-  echo "→ Gợi ý: printf '%s' URL | gh secret set VITE_API_URL"
-fi
 
 echo ""
 echo "=== Kiểm tra dashboard Railway ==="
-echo "Source → Root Directory: ĐỂ TRỐNG (cả api và web). Xóa Watch Paths hoặc để **."
-echo "Config as code: có thể tắt (api dùng Dockerfile gốc; web dùng Dockerfile.web + biến RAILWAY_DOCKERFILE_PATH)."
+echo "- Chỉ cần **một** service app (vd. $SERVICE) + Postgres."
+echo "- Source → Root Directory: **trống**. Có thể xoá service **web** cũ nếu không dùng."
+echo "- FRONTEND_URL phải trùng URL bạn mở trên trình duyệt (thường = public URL của $SERVICE)."
 echo ""
 
 if [[ "${SKIP_DEPLOY:-}" != "1" ]]; then
-  echo "→ Deploy API (full repo)…"
+  echo "→ Deploy (full repo, một image)…"
   cd "$ROOT"
   # shellcheck disable=SC2086
-  $CLI up . --environment "$ENV" --service api --project "$PROJECT_ID" \
-    --detach --message "provision api $(date -u +%Y-%m-%dT%H:%MZ)"
-
-  echo "→ Deploy web…"
-  export VITE_API_URL="$API_URL"
-  # shellcheck disable=SC2086
-  $CLI up . --environment "$ENV" --service web --project "$PROJECT_ID" \
-    --detach --message "provision web $(date -u +%Y-%m-%dT%H:%MZ)"
+  $CLI up . --environment "$ENV" --service "$SERVICE" --project "$PROJECT_ID" \
+    --detach --message "unified deploy $(date -u +%Y-%m-%dT%H:%MZ)"
 
   echo ""
-  echo "Xong. web: $WEB_URL · api: $API_URL"
+  echo "Xong. Mở: $APP_URL"
   echo "API Shell (một lần): npm run db:seed"
 else
   echo "SKIP_DEPLOY=1 — chỉ đã set biến."

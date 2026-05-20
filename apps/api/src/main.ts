@@ -14,11 +14,17 @@ async function bootstrap() {
   if (typeof http?.set === 'function') {
     http.set('trust proxy', 1);
   }
+  /** Một origin (Docker unified): static web + API. Dev: Vite proxy /api → đây. */
+  app.setGlobalPrefix('api');
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true }),
   );
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  console.log(`API running on http://localhost:${port}`);
+  console.log(
+    process.env.WEB_DIST_PATH
+      ? `App (API + web) running on http://localhost:${port}`
+      : `API running on http://localhost:${port}`,
+  );
 }
 bootstrap();
