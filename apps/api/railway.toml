@@ -1,5 +1,7 @@
 # Railway: Root Directory = apps/api (bắt buộc nếu deploy từ GitHub repo)
 [build]
+# Ghi đè Watch Paths trên dashboard — pattern kiểu /apps/api/** không khớp archive --path-as-root.
+watchPatterns = ["**"]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 

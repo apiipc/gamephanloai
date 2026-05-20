@@ -1,6 +1,7 @@
 # Bản sao cho deploy CLI `--path-as-root`: Railway vẫn tìm `apps/web/railway.toml`.
 # File chính: ../../railway.toml (cùng nội dung).
 [build]
+watchPatterns = ["**"]
 builder = "DOCKERFILE"
 dockerfilePath = "../../Dockerfile"
 

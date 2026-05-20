@@ -1,5 +1,6 @@
 # Railway: Root Directory = apps/web (bắt buộc nếu deploy từ GitHub repo)
 [build]
+watchPatterns = ["**"]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 

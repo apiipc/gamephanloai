@@ -110,7 +110,7 @@ Docs biến tham chiếu: [Variables Reference](https://docs.railway.com/variabl
 
 5. **Settings** → **Config as code** (`railway.toml`):  
    - Thường **`/apps/api/railway.toml`** (GitHub monorepo) hoặc **`railway.toml`**.  
-   - Repo có thêm **`apps/api/apps/api/railway.toml`** (cùng nội dung) để bundle **`--path-as-root`** vẫn có path `apps/api/railway.toml` trong archive.
+   - Repo có thêm **`apps/api/apps/api/railway.toml`** (`dockerfilePath` trỏ lên gốc bundle) **`watchPatterns = ["**"]`** để CLI `--path-as-root` không bị skip build do watch paths dashboard.
 6. **Networking** → **Generate Domain** → copy URL API.
 
 Docs NestJS: [Nest.js on Railway](https://docs.railway.com/guides/nestjs).
