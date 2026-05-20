@@ -83,7 +83,8 @@ if [[ "${SKIP_DEPLOY:-}" != "1" ]]; then
   echo "→ Deploy (full repo, một image)…"
   cd "$ROOT"
   # shellcheck disable=SC2086
-  $CLI up . --environment "$ENV" --service "$SERVICE" --project "$PROJECT_ID" \
+  # Không truyền path `.` — tránh lỗi "prefix not found" trên một số bản Railway CLI
+  $CLI up --environment "$ENV" --service "$SERVICE" --project "$PROJECT_ID" \
     --detach --message "unified deploy $(date -u +%Y-%m-%dT%H:%MZ)"
 
   echo ""
