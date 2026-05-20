@@ -307,6 +307,65 @@ export class AdminService {
     });
   }
 
+  /** Học sinh: nhập tên lớp — tìm trong org hoặc tạo mới (GV chỉ được lớp đã gán). */
+  private async resolveClassForNewStudent(
+    user: JwtPayload,
+    organizationId: string,
+    classId?: string,
+    className?: string,
+  ): Promise<string> {
+    const nameInput = className?.trim();
+    if (nameInput) {
+      if (user.role === 'TEACHER') {
+        const found = await this.prisma.class.findFirst({
+          where: {
+            teacherId: user.sub,
+            organizationId,
+            name: { equals: nameInput, mode: 'insensitive' },
+          },
+        });
+        if (!found) {
+          throw new BadRequestException(
+            `Không có lớp «${nameInput}» trong số lớp bạn phụ trách. Nhập đúng tên lớp đã có.`,
+          );
+        }
+        return found.id;
+      }
+
+      this.assertOrgAccess(user, organizationId);
+      let cls = await this.prisma.class.findFirst({
+        where: {
+          organizationId,
+          name: { equals: nameInput, mode: 'insensitive' },
+        },
+      });
+      if (!cls) {
+        cls = await this.prisma.class.create({
+          data: { name: nameInput, organizationId },
+        });
+        await this.log(user, 'CREATE_CLASS', cls.id, {
+          autoFromUserCreate: true,
+        });
+      }
+      return cls.id;
+    }
+
+    if (!classId) {
+      throw new BadRequestException('Học sinh cần nhập tên lớp');
+    }
+
+    const cls = await this.prisma.class.findUnique({ where: { id: classId } });
+    if (!cls) throw new BadRequestException('Lớp không tồn tại');
+    if (cls.organizationId !== organizationId) {
+      throw new BadRequestException('Lớp không thuộc tổ chức');
+    }
+    this.assertOrgAccess(user, cls.organizationId);
+    if (user.role === 'TEACHER' && cls.teacherId !== user.sub) {
+      throw new ForbiddenException();
+    }
+    return classId;
+  }
+
   async createUser(
     user: JwtPayload,
     data: {
@@ -315,6 +374,7 @@ export class AdminService {
       fullName: string;
       role: Role;
       classId?: string;
+      className?: string;
       organizationId?: string;
     },
   ) {
@@ -331,6 +391,19 @@ export class AdminService {
       throw new ForbiddenException();
     }
 
+    let resolvedClassId: string | undefined;
+    if (data.role === 'STUDENT') {
+      if (!orgId) {
+        throw new ForbiddenException('Thiếu organization cho học sinh');
+      }
+      resolvedClassId = await this.resolveClassForNewStudent(
+        user,
+        orgId,
+        data.classId,
+        data.className,
+      );
+    }
+
     const created = await this.prisma.user.create({
       data: {
         email: data.email,
@@ -338,7 +411,7 @@ export class AdminService {
         fullName: data.fullName,
         role: data.role,
         organizationId: orgId,
-        classId: data.classId,
+        classId: resolvedClassId,
       },
     });
     await this.log(user, 'CREATE_USER', created.id, { email: data.email });
@@ -371,23 +444,6 @@ export class AdminService {
       throw new ForbiddenException('Thiếu tổ chức');
     }
 
-    const classWhere =
-      user.role === 'SUPER_ADMIN'
-        ? orgId
-          ? { organizationId: orgId }
-          : {}
-        : user.role === 'TEACHER'
-          ? { teacherId: user.sub }
-          : { organizationId: user.organizationId! };
-
-    const classes = await this.prisma.class.findMany({
-      where: classWhere,
-      select: { id: true, name: true },
-    });
-    const classByName = new Map(
-      classes.map((c) => [c.name.trim().toLowerCase(), c.id]),
-    );
-
     let created = 0;
     const errors: { row: number; email: string; message: string }[] = [];
 
@@ -395,17 +451,7 @@ export class AdminService {
       const row = rows[i];
       const rowNum = i + 2;
       try {
-        let classId: string | undefined;
-        if (row.className?.trim()) {
-          const key = row.className.trim().toLowerCase();
-          classId = classByName.get(key);
-          if (!classId) {
-            throw new BadRequestException(
-              `Không tìm thấy lớp «${row.className}»`,
-            );
-          }
-        }
-        if (row.role === 'STUDENT' && !classId) {
+        if (row.role === 'STUDENT' && !row.className?.trim()) {
           throw new BadRequestException('Học sinh cần có cột Lớp');
         }
 
@@ -414,7 +460,7 @@ export class AdminService {
           password: row.password,
           fullName: row.fullName.trim(),
           role: row.role,
-          classId,
+          className: row.className?.trim() || undefined,
           organizationId: orgId ?? undefined,
         });
         created++;

@@ -255,11 +255,7 @@ export default function AdminPage() {
 
       {tab === 'trash' && canManageTrash && (
         <>
-          <div className="trash-sync-bar">
-            <p style={{ fontSize: 13, color: 'var(--gray-600)', flex: 1 }}>
-              Đồng bộ 33 vật phẩm từ thư mục{' '}
-              <code style={{ fontSize: 12 }}>public/assets/items</code> (theo file manifest).
-            </p>
+          <div className="trash-sync-bar" style={{ justifyContent: 'flex-end' }}>
             <button
               type="button"
               className="btn btn-secondary"

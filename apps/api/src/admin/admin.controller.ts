@@ -44,6 +44,10 @@ class CreateUserDto {
   @IsOptional()
   @IsString()
   classId?: string;
+
+  @IsOptional()
+  @IsString()
+  className?: string;
 }
 
 class CreateTrashBodyDto {

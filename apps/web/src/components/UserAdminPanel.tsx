@@ -48,12 +48,15 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
     const fd = new FormData(e.currentTarget);
     setSaving(true);
     try {
+      const role = fd.get('role') as Role;
       await adminApi.createUser({
         fullName: String(fd.get('fullName')).trim(),
         email: String(fd.get('email')).trim().toLowerCase(),
         password: String(fd.get('password')),
-        role: fd.get('role') as Role,
-        classId: String(fd.get('classId') || '') || undefined,
+        role,
+        ...(role === 'STUDENT'
+          ? { className: String(fd.get('className') || '').trim() }
+          : {}),
       });
       e.currentTarget.reset();
       setFormRole('STUDENT');
@@ -127,16 +130,18 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
           {formRole === 'STUDENT' && (
             <label className="user-admin__field">
               <span>Lớp *</span>
-              <select name="classId" required defaultValue="">
-                <option value="" disabled>
-                  Chọn lớp
-                </option>
+              <input
+                name="className"
+                required
+                placeholder="VD: 6A1, 7B3…"
+                list="admin-class-suggestions"
+                autoComplete="off"
+              />
+              <datalist id="admin-class-suggestions">
                 {classes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
+                  <option key={c.id} value={c.name} />
                 ))}
-              </select>
+              </datalist>
             </label>
           )}
           <button type="submit" className="btn btn-primary" disabled={saving}>
