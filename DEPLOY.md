@@ -4,7 +4,7 @@ Toàn bộ chạy trên **Railway** (PostgreSQL + API + Web).
 
 Hướng dẫn chi tiết: **[RAILWAY.md](./RAILWAY.md)**
 
-Deploy tự động (GitHub Actions): **[RAILWAY-SETUP.md](./RAILWAY-SETUP.md)**
+Toàn bộ cách kết nối Railway: **[RAILWAY.md](./RAILWAY.md)** · [docs.railway.com](https://docs.railway.com/)
 
 ## Tóm tắt
 
