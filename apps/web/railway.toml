@@ -1,7 +1,7 @@
 # Railway: Root Directory = apps/web (bắt buộc nếu deploy từ GitHub repo)
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "Dockerfile.web"
 
 [deploy]
 restartPolicyType = "ON_FAILURE"
