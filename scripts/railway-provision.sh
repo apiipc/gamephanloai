@@ -4,9 +4,13 @@
 #   export RAILWAY_TOKEN="..."   # Project Token: Railway → Project → Settings → Tokens
 #   ./scripts/railway-provision.sh
 #
+# Bắt buộc trên Railway (một lần): service **api** và **web** → Settings → Source →
+#   **Root Directory = để trống** (clone cả repo). Nếu còn `apps/api` / `apps/web`,
+#   CLI `railway up .` sẽ lỗi hoặc Docker COPY sai.
+#
 # Tuỳ chọn:
 #   RAILWAY_JWT_SECRET   — nếu không set, script tạo chuỗi ngẫu nhiên (in ra một lần).
-#   RAILWAY_POSTGRES_SERVICE — mặc định Postgres (đổi nếu DB tên khác, vd. Postgres-rMPd).
+#   RAILWAY_POSTGRES_SERVICE — mặc định Postgres (đổi nếu DB tên khác).
 #   SKIP_GH_SECRET=1     — không gọi gh secret set VITE_API_URL
 #   SKIP_DEPLOY=1        — chỉ set biến, không railway up
 #
@@ -21,16 +25,15 @@ fi
 ENV="${RAILWAY_ENVIRONMENT:-production}"
 POSTGRES="${RAILWAY_POSTGRES_SERVICE:-Postgres}"
 
-# URL công khai (Railway → service → Networking). Sửa nếu domain khác.
 WEB_URL="${RAILWAY_WEB_URL:-https://web-production-831d3.up.railway.app}"
 API_URL="${RAILWAY_API_URL:-https://api-production-cafe.up.railway.app}"
 
 if [[ -z "${RAILWAY_TOKEN:-}" ]]; then
-  echo "Thiếu RAILWAY_TOKEN. Lấy tại: Railway → Project game → Settings → Tokens → Create project token"
+  echo "Thiếu RAILWAY_TOKEN. Railway → Project game → Settings → Tokens"
   exit 1
 fi
 if [[ -z "$PROJECT_ID" ]]; then
-  echo "Thiếu projectId (thêm .railway/project.json hoặc export RAILWAY_PROJECT_ID=...)"
+  echo "Thiếu projectId (.railway/project.json hoặc RAILWAY_PROJECT_ID)"
   exit 1
 fi
 
@@ -46,16 +49,14 @@ if [[ -z "$JWT" ]]; then
   echo "→ JWT_SECRET mới (lưu lại nếu cần): $JWT"
 fi
 
-# Tham chiếu DB Railway: tên service Postgres trên canvas
 DB_REF="\${{${POSTGRES}.DATABASE_URL}}"
-echo "→ api DATABASE_URL = $DB_REF"
-
-echo "→ api: DATABASE_URL, FRONTEND_URL, JWT_SECRET"
+echo "→ api: DATABASE_URL, FRONTEND_URL, JWT_SECRET, RAILWAY_DOCKERFILE_PATH"
 
 # shellcheck disable=SC2086
 $CLI variable set \
   "DATABASE_URL=${DB_REF}" \
   "FRONTEND_URL=${WEB_URL}" \
+  "RAILWAY_DOCKERFILE_PATH=Dockerfile.api" \
   --service api \
   --environment "$ENV" \
   --project "$PROJECT_ID"
@@ -65,46 +66,50 @@ printf '%s' "$JWT" | $CLI variable set JWT_SECRET --stdin \
   --environment "$ENV" \
   --project "$PROJECT_ID"
 
+echo "→ web: VITE_API_URL, RAILWAY_DOCKERFILE_PATH"
+
 # shellcheck disable=SC2086
 $CLI variable set \
   "VITE_API_URL=${API_URL}" \
+  "RAILWAY_DOCKERFILE_PATH=Dockerfile.web" \
   --service web \
   --environment "$ENV" \
   --project "$PROJECT_ID"
 
 if [[ "${SKIP_GH_SECRET:-}" != "1" ]] && command -v gh >/dev/null 2>&1; then
   if gh auth status &>/dev/null; then
-    echo "→ gh secret set VITE_API_URL (GitHub Actions build web)"
+    echo "→ gh secret set VITE_API_URL"
     printf '%s' "$API_URL" | gh secret set VITE_API_URL 2>/dev/null || \
-      echo "   (bỏ qua nếu không có quyền repo; set tay: printf %s URL | gh secret set VITE_API_URL)"
+      echo "   (bỏ qua nếu không có quyền repo)"
   else
-    echo "→ chưa gh auth login — bỏ qua gh secret (tùy chọn)"
+    echo "→ chưa gh auth login — bỏ qua gh secret"
   fi
 else
-  echo "→ Gợi ý: gh secret set VITE_API_URL (để Actions embed API URL khi build)"
+  echo "→ Gợi ý: printf '%s' URL | gh secret set VITE_API_URL"
 fi
 
 echo ""
-echo "=== (Tuỳ chọn) Dashboard Railway ==="
-echo "Nếu deploy vẫn fail ở Snapshot/config: Config as code → thử railway.toml hoặc /apps/api/railway.toml (repo đã có apps/*/apps/*/railway.toml)."
+echo "=== Kiểm tra dashboard Railway ==="
+echo "Source → Root Directory: ĐỂ TRỐNG (cả api và web). Xóa Watch Paths hoặc để **."
+echo "Config as code: có thể tắt nếu dùng Dockerfile.api / Dockerfile.web."
 echo ""
 
 if [[ "${SKIP_DEPLOY:-}" != "1" ]]; then
-  echo "→ Deploy API…"
+  echo "→ Deploy API (full repo)…"
   cd "$ROOT"
   # shellcheck disable=SC2086
-  $CLI up ./apps/api --path-as-root --environment "$ENV" --service api --project "$PROJECT_ID" \
+  $CLI up . --environment "$ENV" --service api --project "$PROJECT_ID" \
     --detach --message "provision api $(date -u +%Y-%m-%dT%H:%MZ)"
 
   echo "→ Deploy web…"
   export VITE_API_URL="$API_URL"
   # shellcheck disable=SC2086
-  $CLI up ./apps/web --path-as-root --environment "$ENV" --service web --project "$PROJECT_ID" \
+  $CLI up . --environment "$ENV" --service web --project "$PROJECT_ID" \
     --detach --message "provision web $(date -u +%Y-%m-%dT%H:%MZ)"
 
   echo ""
-  echo "Xong. Xem log trên Railway; web: $WEB_URL · api: $API_URL"
-  echo "Sau khi api lên: Shell service api → npm run db:seed (một lần)."
+  echo "Xong. web: $WEB_URL · api: $API_URL"
+  echo "API Shell (một lần): npm run db:seed"
 else
-  echo "SKIP_DEPLOY=1 — chỉ đã set biến. Redeploy tay trên Railway hoặc chạy lại không có SKIP_DEPLOY."
+  echo "SKIP_DEPLOY=1 — chỉ đã set biến."
 fi

@@ -8,12 +8,12 @@
 #   gh secret set VITE_API_URL --repo apiipc/gamephanloai
 #   (vd. https://api-production-xxxx.up.railway.app)
 #
-# Trên Railway: Postgres + service "api" + "web"; mỗi service Root Directory = apps/api | apps/web
+# Trên Railway — quan trọng (tránh watch paths + đủ context Docker):
+#   - Service **api** và **web**: Settings → Source → **Root Directory để TRỐNG** (repo root).
+#   - Variables: **RAILWAY_DOCKERFILE_PATH** = `Dockerfile.api` / `Dockerfile.web`.
+#   - Có thể xóa / để trống **Config as code** (railway.toml) nếu chỉ dùng Dockerfile.
 #
-# Dùng --path-as-root (upload đúng context build). Trên dashboard Railway, mục
-# **Config as code** (đường dẫn railway.toml) phải là **railway.toml** — KHÔNG
-# phải apps/api/railway.toml (path đó chỉ đúng khi deploy clone cả repo từ GitHub,
-# không đúng với bundle CLI chỉ chứa thư mục service).
+# Script local: ./scripts/railway-provision.sh (set biến + deploy)
 
 name: Deploy to Railway
 
@@ -23,6 +23,9 @@ on:
     paths:
       - 'apps/api/**'
       - 'apps/web/**'
+      - 'Dockerfile.api'
+      - 'Dockerfile.web'
+      - '.dockerignore'
       - 'package-lock.json'
       - '.github/workflows/railway-deploy.yml'
   workflow_dispatch:
@@ -46,8 +49,7 @@ jobs:
             echo "::error::Thiếu GitHub secret RAILWAY_TOKEN"
             exit 1
           fi
-          railway up ./apps/api \
-            --path-as-root \
+          railway up . \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service api \
             --detach \
@@ -73,8 +75,7 @@ jobs:
           if [ -n "$VITE_API_URL" ]; then
             export VITE_API_URL
           fi
-          railway up ./apps/web \
-            --path-as-root \
+          railway up . \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service web \
             --detach \

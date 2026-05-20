@@ -34,6 +34,28 @@ Không cần Vercel — web + API + DB đều trên Railway.
 
 ---
 
+## Cách deploy khuyến nghị (monorepo + CLI / GitHub Actions)
+
+Dùng **Dockerfile ở gốc repo** + biến **`RAILWAY_DOCKERFILE_PATH`** (theo [Railway monorepo / Docker](https://docs.railway.com/deployments/monorepo)):
+
+| File | Service Railway |
+|------|-----------------|
+| **[`Dockerfile.api`](./Dockerfile.api)** | `api` — `RAILWAY_DOCKERFILE_PATH=Dockerfile.api` |
+| **[`Dockerfile.web`](./Dockerfile.web)** | `web` — `RAILWAY_DOCKERFILE_PATH=Dockerfile.web` |
+
+**Trên dashboard (mỗi service `api` và `web`):**
+
+1. **Settings → Source → Root Directory:** để **trống** (clone cả repo).
+2. **Variables:** thêm `RAILWAY_DOCKERFILE_PATH` như bảng trên.
+3. **Watch paths:** xóa hoặc `**` (pattern kiểu `/apps/api/**` + `railway up .` từng khiến snapshot gần rỗng).
+4. **Config as code:** có thể **tắt** (không bắt buộc `railway.toml` khi đã dùng Dockerfile path).
+
+Sau đó **`./scripts/railway-provision.sh`** (có `RAILWAY_TOKEN`) hoặc push `main` để GitHub Actions chạy `railway up .`.
+
+Các file **`apps/*/railway.toml`** vẫn hữu ích nếu bạn deploy **chỉ từ GitHub** với **Root Directory** = `apps/api` / `apps/web`.
+
+---
+
 ## 4 cách kết nối (chọn 1 hoặc kết hợp)
 
 | Cách | Khi nào dùng | Tài liệu Railway |
@@ -44,7 +66,7 @@ Không cần Vercel — web + API + DB đều trên Railway.
 | **4. Config file** | Build/start cố định | [Config as code](https://docs.railway.com/deployments/reference) |
 | **5. AI trong Cursor** | Hỏi AI deploy, log, biến môi trường | [Railway + AI](https://docs.railway.com/ai.md) |
 
-Repo đã có sẵn: `apps/api/railway.toml`, `apps/web/railway.toml`, `.github/workflows/railway-deploy.yml`.
+Repo: **`Dockerfile.api`**, **`Dockerfile.web`**, `apps/api/railway.toml`, `apps/web/railway.toml`, [`.github/workflows/railway-deploy.yml`](./.github/workflows/railway-deploy.yml), **`scripts/railway-provision.sh`**.
 
 ### Cách 5 — MCP + skill `use-railway` (Cursor)
 
@@ -68,8 +90,8 @@ chmod +x scripts/railway-provision.sh
 ./scripts/railway-provision.sh
 ```
 
-Script set `DATABASE_URL` (tham chiếu Postgres), `JWT_SECRET`, `FRONTEND_URL`, `VITE_API_URL`, tùy chọn đồng bộ `gh secret set VITE_API_URL`, rồi `railway up` cho **api** và **web**.  
-**Dashboard:** mỗi service vẫn có thể để **Config as code** = `apps/api/railway.toml` / `apps/web/railway.toml` (hoặc `railway.toml` nếu bạn đã đổi). Repo có **bản sao** `apps/*/apps/*/railway.toml` để bundle CLI `--path-as-root` vẫn chứa đúng path đó.
+Script set biến (gồm **`RAILWAY_DOCKERFILE_PATH`**) và chạy **`railway up .`** từ gốc repo.  
+Xem mục **Cách deploy khuyến nghị** — **Root Directory phải trống** trên cả hai service.
 
 ---
 
@@ -95,10 +117,10 @@ Docs: [PostgreSQL](https://docs.railway.com/databases/postgresql).
 
 1. **+ New** → **GitHub Repo** → cùng repo `gamephanloai`.
 2. Đổi tên service thành **`api`** (Settings → name).
-3. **Settings** → **Source**:
-   - **Root Directory:** `apps/api`
-   - Branch: `main`
-4. **Variables** (tab Variables):
+3. **Settings** → **Source** + **Variables** (khuyến nghị giống mục [Cách deploy khuyến nghị](#cách-deploy-khuyến-nghị-monorepo--cli--github-actions)):
+   - **Root Directory để trống** · **`RAILWAY_DOCKERFILE_PATH=Dockerfile.api`** · Branch `main`.
+   - *Hoặc chỉ dùng GitHub build:* Root **`apps/api`**, config **`/apps/api/railway.toml`**.
+4. **Variables** (bổ sung):
 
 | Biến | Giá trị |
 |------|---------|
@@ -108,10 +130,7 @@ Docs: [PostgreSQL](https://docs.railway.com/databases/postgresql).
 
 Docs biến tham chiếu: [Variables Reference](https://docs.railway.com/variables/reference).
 
-5. **Settings** → **Config as code** (`railway.toml`):  
-   - Thường **`/apps/api/railway.toml`** (GitHub monorepo) hoặc **`railway.toml`**.  
-   - Repo có thêm **`apps/api/apps/api/railway.toml`** (`dockerfilePath` trỏ lên gốc bundle) **`watchPatterns = ["**"]`** để CLI `--path-as-root` không bị skip build do watch paths dashboard.
-6. **Networking** → **Generate Domain** → copy URL API.
+5. **Networking** → **Generate Domain** → copy URL API.
 
 Docs NestJS: [Nest.js on Railway](https://docs.railway.com/guides/nestjs).
 
@@ -119,14 +138,14 @@ Docs NestJS: [Nest.js on Railway](https://docs.railway.com/guides/nestjs).
 
 1. **+ New** → **GitHub Repo** → `gamephanloai`.
 2. Đặt tên: **`web`**.
-3. **Root Directory:** `apps/web`
+3. **Source:** **Root Directory trống** + **`RAILWAY_DOCKERFILE_PATH=Dockerfile.web`** (hoặc GitHub-only: root **`apps/web`** + `/apps/web/railway.toml`).
 4. **Variables:**
 
 | Biến | Giá trị |
 |------|---------|
 | `VITE_API_URL` | `https://${{api.RAILWAY_PUBLIC_DOMAIN}}` |
 
-5. **Config as code:** giống **api** — có thể **`/apps/web/railway.toml`** (GitHub) hoặc **`railway.toml`**. File **`apps/web/apps/web/railway.toml`** giúp deploy CLI `--path-as-root` vẫn khớp path mặc định.
+5. **Config as code:** chỉ cần nếu không dùng `Dockerfile.web` ở gốc repo.
 
 6. **Networking** → **Generate Domain** → **đây là link game**.
 7. Quay lại service **api** → sửa `FRONTEND_URL` → **Redeploy** API.
@@ -231,15 +250,9 @@ Hoặc **push** lên nhánh `main` → workflow tự chạy.
 
 Xem log: GitHub → **Actions** → **Deploy to Railway**.
 
-**Lưu ý:** Trên Railway phải **đã tạo** service tên `api` và `web` (Cách 1) trước khi Actions deploy được.
+**Trên Railway:** đã tạo service **`api`** và **`web`**. **Root Directory để trống**, đã set **`RAILWAY_DOCKERFILE_PATH`**, **`RAILWAY_TOKEN`** trong GitHub secrets. Workflow chạy **`railway up .`** (upload cả repo).
 
-**Bắt buộc với deploy CLI (`railway up … --path-as-root`):**  
-Service **api** và **web** → **Settings** → **Config as code** (hoặc đường dẫn `railway.toml`): đặt **`railway.toml`** (chỉ tên file ở root bundle).  
-Đừng để `apps/api/railway.toml` hay `apps/web/railway.toml` — các đường đó chỉ khớp khi Railway clone **cả repo** từ GitHub; bundle từ CLI chỉ có nội dung `apps/api` hoặc `apps/web` nên sẽ báo **service config … not found**.
-
-Nếu trước đây bạn bật autodeploy từ GitHub trên cùng service, Railway có thể đã lưu path dạng `apps/...` — sửa lại như trên trước khi chạy Actions.
-
-**Không** dùng `railway up .` từ root repo khi service vẫn có **Root Directory** `apps/api` / `apps/web`: CLI thường báo **`prefix not found`**.
+Chi tiết: mục [Cách deploy khuyến nghị](#cách-deploy-khuyến-nghị-monorepo--cli--github-actions).
 
 ---
 
@@ -264,6 +277,8 @@ Docs: [Config as code](https://docs.railway.com/deployments/reference) · [Build
 | **api** | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
 | **api** | `JWT_SECRET` | Ký JWT đăng nhập |
 | **api** | `FRONTEND_URL` | CORS — domain web |
+| **api** | `RAILWAY_DOCKERFILE_PATH` | `Dockerfile.api` khi Root Directory trống |
+| **web** | `RAILWAY_DOCKERFILE_PATH` | `Dockerfile.web` khi Root Directory trống |
 | **web** | `VITE_API_URL` | Build React gọi API (`https://...`) |
 
 Cú pháp `${{service.BIEN}}`: [Variable Reference](https://docs.railway.com/variables/reference).
@@ -304,8 +319,8 @@ Schema production dùng **PostgreSQL** (không còn SQLite `dev.db`).
 | Trang **404** | Deploy nhầm API làm static | Chỉ `apps/web` serve `dist` |
 | Đăng nhập lỗi | Web chưa có `VITE_API_URL` | Set biến + redeploy web |
 | CORS lỗi | `FRONTEND_URL` sai | `https://` + domain web, redeploy API |
-| **`service config at 'apps/.../railway.toml' not found`** | Deploy bằng CLI với `--path-as-root` nhưng **Config as code** vẫn trỏ `apps/.../railway.toml` | Service → Settings → đường dẫn config = **`railway.toml`** (xem mục Cách 3) |
-| **`prefix not found`** (CLI) | `railway up .` với service đã set **Root Directory** monorepo | Dùng `railway up ./apps/<tên> --path-as-root --service …` như workflow; hoặc bỏ Root Directory và đổi Dockerfile (không khuyến nghị) |
+| Build skip / snapshot ~26KB / **Dockerfile not found** | **Watch paths** dashboard không khớp upload (`railway up .`) | Root Directory **trống** + **`RAILWAY_DOCKERFILE_PATH`** + xóa/cập nhật Watch paths (xem [mục khuyến nghị](#cách-deploy-khuyến-nghị-monorepo--cli--github-actions)) |
+| **`prefix not found`** (CLI) | `railway up .` khi **Root Directory** vẫn là `apps/...` | Để Root Directory **trống** hoặc chỉ dùng `railway up ./apps/<svc> --path-as-root` với config tương thích |
 | `Unauthorized` CLI | Chưa login / token hỏng | `railway login` hoặc token mới |
 | Actions fail | Thiếu secret / chưa có service | `gh secret set` + tạo `api`/`web` trên Railway |
 
