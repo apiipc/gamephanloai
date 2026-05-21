@@ -6,6 +6,7 @@ import { WheelMissionsDrawer } from '../components/WheelMissionsDrawer';
 import { WheelSpin } from '../components/WheelSpin';
 import type { WheelSpinResult, WheelState } from '../types';
 import { SoundToggle } from '../components/SoundToggle';
+import { useGameMusic } from '../hooks/useGameMusic';
 import { playSound } from '../lib/sounds';
 import { WHEEL_PRIZE_LABEL } from '../wheel/constants';
 
@@ -28,6 +29,8 @@ export default function WheelPage() {
   useEffect(() => {
     load().catch((e) => setError(e instanceof Error ? e.message : 'Không tải được'));
   }, [load]);
+
+  useGameMusic('wheel', Boolean(state));
 
   const handleSpin = async () => {
     if (!state || spinning || state.spinsRemaining <= 0) return;

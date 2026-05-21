@@ -52,7 +52,7 @@ export default function ProfilePage() {
           <div>
             <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 4 }}>Âm thanh game</p>
             <p style={{ fontSize: 12, color: 'var(--gray-600)' }}>
-              Hiệu ứng khi chơi phân loại, quiz, vòng quay
+              Hiệu ứng + nhạc nền khi chơi phân loại, quiz, vòng quay
             </p>
           </div>
           <SoundToggle showLabel />

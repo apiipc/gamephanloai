@@ -3,6 +3,8 @@
  * Bật/tắt lưu localStorage; cần tương tác người dùng để mở khóa autoplay.
  */
 
+import { stopGameMusic } from './gameMusic';
+
 export type GameSound =
   | 'correct'
   | 'wrong'
@@ -52,6 +54,11 @@ export const SOUND_CATALOG: SoundCatalogItem[] = [
   { id: 'finish', label: 'Hết trận', hint: 'Kết thúc một lượt chơi', game: 'Chung' },
   { id: 'click', label: 'Chọn menu', hint: 'Bấm vào thẻ game trên Mini Game', game: 'Chung' },
 ];
+
+/** Dùng chung cho SFX và nhạc nền */
+export function getAudioContext(): AudioContext | null {
+  return ensureCtx();
+}
 
 function ensureCtx(): AudioContext | null {
   if (!ctx) {
@@ -130,9 +137,10 @@ export function setSoundEnabled(on: boolean): void {
   } catch {
     /* ignore */
   }
-  if (!on && ctx) {
-    void ctx.suspend();
-  } else if (on && ctx) {
+  if (!on) {
+    stopGameMusic();
+    if (ctx) void ctx.suspend();
+  } else if (ctx) {
     void ctx.resume();
   }
 }

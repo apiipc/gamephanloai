@@ -4,6 +4,7 @@ import { GameViewport } from '../components/GameViewport';
 import { TrashItemView } from '../components/TrashItemView';
 import { gameApi } from '../api/client';
 import { SoundToggle } from '../components/SoundToggle';
+import { useGameMusic } from '../hooks/useGameMusic';
 import { playSound } from '../lib/sounds';
 import type { GameSession, TrashCategory, TrashItem } from '../types';
 import { BIN_IMAGES } from '../types';
@@ -77,6 +78,8 @@ export default function GamePage() {
   sessionRef.current = session;
   currentRef.current = current;
   itemsRef.current = items;
+
+  useGameMusic('sort', Boolean(session && current));
 
   useEffect(() => {
     (async () => {

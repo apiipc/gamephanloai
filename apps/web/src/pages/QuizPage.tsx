@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GameViewport } from '../components/GameViewport';
 import { quizApi } from '../api/client';
 import { SoundToggle } from '../components/SoundToggle';
+import { useGameMusic } from '../hooks/useGameMusic';
 import { playSound } from '../lib/sounds';
 import type { QuizPlayQuestion } from '../types';
 import {
@@ -41,6 +42,8 @@ export default function QuizPage() {
   const finishedRef = useRef(false);
   const processingRef = useRef(false);
   const prevTimeLeftRef = useRef(10);
+
+  useGameMusic('quiz', !loading && questions.length > 0);
 
   useEffect(() => {
     (async () => {
