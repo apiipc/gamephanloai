@@ -178,6 +178,138 @@ input, select {
   color: var(--gray-600);
 }
 
+.sound-demo-page {
+  padding-bottom: 24px;
+}
+
+.sound-demo__back {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--green-700);
+  margin-bottom: 12px;
+}
+
+.sound-demo__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sound-demo__title {
+  font-size: 20px;
+  color: var(--green-700);
+  margin: 0 0 6px;
+}
+
+.sound-demo__desc {
+  font-size: 13px;
+  color: var(--gray-600);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.sound-demo__note {
+  font-size: 13px;
+  color: var(--gray-700);
+  background: var(--green-50);
+  border: 1px solid var(--green-100);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.sound-demo__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.sound-demo__group {
+  margin-bottom: 18px;
+}
+
+.sound-demo__group-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--green-800);
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--green-100);
+}
+
+.sound-demo__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sound-demo__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-100);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.sound-demo__item:hover:not(:disabled) {
+  border-color: var(--green-300);
+  background: var(--green-50);
+}
+
+.sound-demo__item--active {
+  border-color: var(--green-500);
+  background: var(--green-50);
+}
+
+.sound-demo__item:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.sound-demo__play {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--green-600);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
+.sound-demo__item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sound-demo__item-text strong {
+  font-size: 15px;
+  color: var(--gray-800);
+}
+
+.sound-demo__item-text small {
+  font-size: 12px;
+  color: var(--gray-500);
+  line-height: 1.35;
+}
+
 .game-instruction {
   text-align: center;
   font-size: 13px;

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { SoundToggle } from '../components/SoundToggle';
 import { useAuth } from '../context/AuthContext';
@@ -56,6 +57,9 @@ export default function ProfilePage() {
           </div>
           <SoundToggle showLabel />
         </div>
+        <Link to="/sounds" className="btn btn-primary" style={{ width: '100%', marginBottom: 12, textAlign: 'center' }}>
+          🔊 Nghe thử âm thanh mẫu
+        </Link>
         <button className="btn btn-secondary" style={{ width: '100%' }} onClick={logout}>
           Đăng xuất
         </button>

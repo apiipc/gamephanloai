@@ -32,8 +32,28 @@ function readEnabled(): boolean {
 
 let enabled = readEnabled();
 
-function getCtx(): AudioContext | null {
-  if (!enabled) return null;
+export interface SoundCatalogItem {
+  id: GameSound;
+  label: string;
+  hint: string;
+  game: 'Phân loại' | 'Quiz' | 'Vòng quay' | 'Chung';
+}
+
+/** Danh sách âm thanh để nghe thử trong Hồ sơ */
+export const SOUND_CATALOG: SoundCatalogItem[] = [
+  { id: 'pickup', label: 'Nhấc rác', hint: 'Bắt đầu kéo vật phẩm', game: 'Phân loại' },
+  { id: 'correct', label: 'Đúng', hint: 'Phân loại & Quiz — trả lời đúng', game: 'Chung' },
+  { id: 'wrong', label: 'Sai', hint: 'Phân loại & Quiz — trả lời sai', game: 'Chung' },
+  { id: 'tick', label: 'Tích tắc', hint: '5s / 3s cuối mỗi câu', game: 'Chung' },
+  { id: 'timeout', label: 'Hết giờ', hint: 'Quiz — không kịp chọn đáp án', game: 'Quiz' },
+  { id: 'combo', label: 'Combo', hint: 'Quiz — chuỗi đúng liên tiếp', game: 'Quiz' },
+  { id: 'spin', label: 'Quay vòng', hint: 'Bắt đầu quay vòng quay xanh', game: 'Vòng quay' },
+  { id: 'win', label: 'Trúng thưởng', hint: 'Vòng quay & màn kết quả', game: 'Chung' },
+  { id: 'finish', label: 'Hết trận', hint: 'Kết thúc một lượt chơi', game: 'Chung' },
+  { id: 'click', label: 'Chọn menu', hint: 'Bấm vào thẻ game trên Mini Game', game: 'Chung' },
+];
+
+function ensureCtx(): AudioContext | null {
   if (!ctx) {
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctx) return null;
@@ -50,7 +70,7 @@ function tone(
   duration: number,
   opts?: { type?: OscillatorType; gain?: number; when?: number; slideTo?: number },
 ) {
-  const audio = getCtx();
+  const audio = ensureCtx();
   if (!audio) return;
   const when = opts?.when ?? audio.currentTime;
   const osc = audio.createOscillator();
@@ -71,7 +91,7 @@ function tone(
 }
 
 function chord(notes: number[], duration: number, gain = 0.14) {
-  const audio = getCtx();
+  const audio = ensureCtx();
   if (!audio) return;
   const when = audio.currentTime;
   notes.forEach((freq, i) => {
@@ -88,7 +108,7 @@ const PLAYERS: Record<GameSound, () => void> = {
   finish: () => chord([392, 523.25, 659.25, 783.99], 0.45, 0.18),
   win: () => chord([523.25, 659.25, 783.99, 1046.5], 0.55, 0.2),
   spin: () => {
-    const audio = getCtx();
+    const audio = ensureCtx();
     if (!audio) return;
     const when = audio.currentTime;
     for (let i = 0; i < 6; i++) {
@@ -120,7 +140,7 @@ export function setSoundEnabled(on: boolean): void {
 /** Gọi sau lần chạm/click đầu tiên để trình duyệt cho phát âm thanh */
 export function unlockAudio(): void {
   if (unlocked) return;
-  const audio = getCtx();
+  const audio = ensureCtx();
   if (!audio) return;
   unlocked = true;
   void audio.resume();
@@ -128,10 +148,32 @@ export function unlockAudio(): void {
 
 export function playSound(id: GameSound): void {
   if (!enabled) return;
+  playSoundPreview(id);
+}
+
+/** Nghe thử — luôn phát (dùng trong trang demo), không phụ thuộc công tắt tắt âm */
+export function playSoundPreview(id: GameSound): void {
+  unlockAudio();
   try {
     PLAYERS[id]?.();
   } catch {
-    /* ignore — một số trình duyệt chặn audio */
+    /* ignore */
+  }
+}
+
+/** Phát lần lượt toàn bộ mẫu (demo) */
+export async function playAllSoundPreviews(
+  onStep?: (item: SoundCatalogItem, index: number) => void,
+  gapMs = 700,
+  shouldContinue?: () => boolean,
+): Promise<void> {
+  for (let i = 0; i < SOUND_CATALOG.length; i++) {
+    if (shouldContinue && !shouldContinue()) break;
+    const item = SOUND_CATALOG[i];
+    onStep?.(item, i);
+    playSoundPreview(item.id);
+    await new Promise((r) => setTimeout(r, gapMs));
+    if (shouldContinue && !shouldContinue()) break;
   }
 }
 

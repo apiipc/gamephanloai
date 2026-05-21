@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import MissionsPage from './pages/MissionsPage';
 import PlayPage from './pages/PlayPage';
 import ProfilePage from './pages/ProfilePage';
+import SoundDemoPage from './pages/SoundDemoPage';
 import ResultPage from './pages/ResultPage';
 import QuizPage from './pages/QuizPage';
 import QuizResultPage from './pages/QuizResultPage';
@@ -132,6 +133,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sounds"
+        element={
+          <ProtectedRoute>
+            <SoundDemoPage />
           </ProtectedRoute>
         }
       />
