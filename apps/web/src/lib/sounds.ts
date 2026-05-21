@@ -1,9 +1,10 @@
 /**
- * Âm thanh game — Web Audio API (không cần file MP3).
- * Bật/tắt lưu localStorage; cần tương tác người dùng để mở khóa autoplay.
+ * Hiệu ứng (SFX) — Web Audio + bus âm lượng.
+ * Nhạc nền: file MP3 trong gameMusic.ts
  */
 
-import { stopGameMusic } from './gameMusic';
+import { getSfxVolume, subscribeAudioSettings } from './audioSettings';
+import { applyMusicVolume, stopGameMusic } from './gameMusic';
 
 export type GameSound =
   | 'correct'
@@ -20,6 +21,7 @@ export type GameSound =
 const STORAGE_KEY = 'game-sound-enabled';
 
 let ctx: AudioContext | null = null;
+let sfxBus: GainNode | null = null;
 let unlocked = false;
 
 function readEnabled(): boolean {
@@ -34,6 +36,11 @@ function readEnabled(): boolean {
 
 let enabled = readEnabled();
 
+subscribeAudioSettings(() => {
+  syncSfxBusGain();
+  applyMusicVolume();
+});
+
 export interface SoundCatalogItem {
   id: GameSound;
   label: string;
@@ -41,7 +48,6 @@ export interface SoundCatalogItem {
   game: 'Phân loại' | 'Quiz' | 'Vòng quay' | 'Chung';
 }
 
-/** Danh sách âm thanh để nghe thử trong Hồ sơ */
 export const SOUND_CATALOG: SoundCatalogItem[] = [
   { id: 'pickup', label: 'Nhấc rác', hint: 'Bắt đầu kéo vật phẩm', game: 'Phân loại' },
   { id: 'correct', label: 'Đúng', hint: 'Phân loại & Quiz — trả lời đúng', game: 'Chung' },
@@ -55,14 +61,15 @@ export const SOUND_CATALOG: SoundCatalogItem[] = [
   { id: 'click', label: 'Chọn menu', hint: 'Bấm vào thẻ game trên Mini Game', game: 'Chung' },
 ];
 
-/** Dùng chung cho SFX và nhạc nền */
 export function getAudioContext(): AudioContext | null {
   return ensureCtx();
 }
 
 function ensureCtx(): AudioContext | null {
   if (!ctx) {
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const Ctx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctx) return null;
     ctx = new Ctx();
   }
@@ -72,13 +79,32 @@ function ensureCtx(): AudioContext | null {
   return ctx;
 }
 
+function getSfxBus(): GainNode | null {
+  const audio = ensureCtx();
+  if (!audio) return null;
+  if (!sfxBus || sfxBus.context !== audio) {
+    sfxBus = audio.createGain();
+    sfxBus.connect(audio.destination);
+  }
+  syncSfxBusGain();
+  return sfxBus;
+}
+
+/** forceAudible: nghe thử khi đã tắt âm thanh game */
+export function syncSfxBusGain(forceAudible = false): void {
+  if (!sfxBus) return;
+  const audible = forceAudible || enabled;
+  sfxBus.gain.value = audible ? getSfxVolume() : 0;
+}
+
 function tone(
   frequency: number,
   duration: number,
   opts?: { type?: OscillatorType; gain?: number; when?: number; slideTo?: number },
 ) {
+  const dest = getSfxBus();
   const audio = ensureCtx();
-  if (!audio) return;
+  if (!dest || !audio) return;
   const when = opts?.when ?? audio.currentTime;
   const osc = audio.createOscillator();
   const gain = audio.createGain();
@@ -87,17 +113,17 @@ function tone(
   if (opts?.slideTo) {
     osc.frequency.exponentialRampToValueAtTime(Math.max(opts.slideTo, 1), when + duration);
   }
-  const peak = opts?.gain ?? 0.22;
+  const peak = opts?.gain ?? 0.32;
   gain.gain.setValueAtTime(0.0001, when);
   gain.gain.exponentialRampToValueAtTime(peak, when + 0.012);
   gain.gain.exponentialRampToValueAtTime(0.0001, when + duration);
   osc.connect(gain);
-  gain.connect(audio.destination);
+  gain.connect(dest);
   osc.start(when);
   osc.stop(when + duration + 0.02);
 }
 
-function chord(notes: number[], duration: number, gain = 0.14) {
+function chord(notes: number[], duration: number, gain = 0.22) {
   const audio = ensureCtx();
   if (!audio) return;
   const when = audio.currentTime;
@@ -107,23 +133,23 @@ function chord(notes: number[], duration: number, gain = 0.14) {
 }
 
 const PLAYERS: Record<GameSound, () => void> = {
-  correct: () => chord([523.25, 659.25, 783.99], 0.28, 0.16),
-  wrong: () => tone(180, 0.22, { type: 'square', gain: 0.1, slideTo: 120 }),
-  pickup: () => tone(440, 0.06, { gain: 0.12 }),
-  tick: () => tone(880, 0.04, { gain: 0.08 }),
-  timeout: () => tone(330, 0.2, { type: 'triangle', gain: 0.12, slideTo: 200 }),
-  finish: () => chord([392, 523.25, 659.25, 783.99], 0.45, 0.18),
-  win: () => chord([523.25, 659.25, 783.99, 1046.5], 0.55, 0.2),
+  correct: () => chord([523.25, 659.25, 783.99], 0.28, 0.22),
+  wrong: () => tone(180, 0.22, { type: 'square', gain: 0.14, slideTo: 120 }),
+  pickup: () => tone(440, 0.06, { gain: 0.18 }),
+  tick: () => tone(880, 0.04, { gain: 0.14 }),
+  timeout: () => tone(330, 0.2, { type: 'triangle', gain: 0.16, slideTo: 200 }),
+  finish: () => chord([392, 523.25, 659.25, 783.99], 0.45, 0.24),
+  win: () => chord([523.25, 659.25, 783.99, 1046.5], 0.55, 0.26),
   spin: () => {
     const audio = ensureCtx();
     if (!audio) return;
     const when = audio.currentTime;
     for (let i = 0; i < 6; i++) {
-      tone(200 + i * 40, 0.05, { type: 'triangle', gain: 0.06, when: when + i * 0.07 });
+      tone(200 + i * 40, 0.05, { type: 'triangle', gain: 0.1, when: when + i * 0.07 });
     }
   },
-  combo: () => chord([659.25, 880, 1046.5], 0.2, 0.15),
-  click: () => tone(600, 0.03, { gain: 0.07 }),
+  combo: () => chord([659.25, 880, 1046.5], 0.2, 0.2),
+  click: () => tone(600, 0.03, { gain: 0.12 }),
 };
 
 export function isSoundEnabled(): boolean {
@@ -139,13 +165,15 @@ export function setSoundEnabled(on: boolean): void {
   }
   if (!on) {
     stopGameMusic();
+    syncSfxBusGain();
     if (ctx) void ctx.suspend();
-  } else if (ctx) {
-    void ctx.resume();
+  } else {
+    syncSfxBusGain();
+    applyMusicVolume();
+    if (ctx) void ctx.resume();
   }
 }
 
-/** Gọi sau lần chạm/click đầu tiên để trình duyệt cho phát âm thanh */
 export function unlockAudio(): void {
   if (unlocked) return;
   const audio = ensureCtx();
@@ -159,9 +187,9 @@ export function playSound(id: GameSound): void {
   playSoundPreview(id);
 }
 
-/** Nghe thử — luôn phát (dùng trong trang demo), không phụ thuộc công tắt tắt âm */
 export function playSoundPreview(id: GameSound): void {
   unlockAudio();
+  syncSfxBusGain(true);
   try {
     PLAYERS[id]?.();
   } catch {
@@ -169,12 +197,12 @@ export function playSoundPreview(id: GameSound): void {
   }
 }
 
-/** Phát lần lượt toàn bộ mẫu (demo) */
 export async function playAllSoundPreviews(
   onStep?: (item: SoundCatalogItem, index: number) => void,
   gapMs = 700,
   shouldContinue?: () => boolean,
 ): Promise<void> {
+  syncSfxBusGain(true);
   for (let i = 0; i < SOUND_CATALOG.length; i++) {
     if (shouldContinue && !shouldContinue()) break;
     const item = SOUND_CATALOG[i];
@@ -185,7 +213,6 @@ export async function playAllSoundPreviews(
   }
 }
 
-/** Gắn một lần trên document để mở khóa audio */
 export function installSoundUnlock(): () => void {
   const onFirst = () => {
     unlockAudio();

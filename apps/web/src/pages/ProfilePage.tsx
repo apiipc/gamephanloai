@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { AudioVolumeControls } from '../components/AudioVolumeControls';
 import { SoundToggle } from '../components/SoundToggle';
 import { useAuth } from '../context/AuthContext';
 
@@ -39,23 +40,17 @@ export default function ProfilePage() {
             ⭐ {user?.greenPoints ?? 0}
           </p>
         </div>
-        <div
-          className="card"
-          style={{
-            marginBottom: 16,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-          }}
-        >
-          <div>
-            <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 4 }}>Âm thanh game</p>
-            <p style={{ fontSize: 12, color: 'var(--gray-600)' }}>
-              Hiệu ứng + nhạc nền khi chơi phân loại, quiz, vòng quay
-            </p>
+        <div className="card audio-settings-card">
+          <div className="audio-settings-card__head">
+            <div>
+              <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 4 }}>Âm thanh game</p>
+              <p style={{ fontSize: 12, color: 'var(--gray-600)', margin: 0 }}>
+                Nhạc nền chung · chỉnh âm lượng hiệu ứng & nhạc
+              </p>
+            </div>
+            <SoundToggle showLabel />
           </div>
-          <SoundToggle showLabel />
+          <AudioVolumeControls showMusicPreview />
         </div>
         <Link to="/sounds" className="btn btn-primary" style={{ width: '100%', marginBottom: 12, textAlign: 'center' }}>
           🔊 Nghe thử âm thanh mẫu

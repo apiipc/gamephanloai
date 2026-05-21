@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  GAME_MUSIC_CATALOG,
-  previewGameMusic,
-  stopGameMusic,
-  type GameMusicId,
-} from '../lib/gameMusic';
+import { stopGameMusic } from '../lib/gameMusic';
 import {
   isSoundEnabled,
   playAllSoundPreviews,
@@ -14,6 +9,7 @@ import {
   type GameSound,
   type SoundCatalogItem,
 } from '../lib/sounds';
+import { AudioVolumeControls } from './AudioVolumeControls';
 import { SoundToggle } from './SoundToggle';
 
 const GAME_ORDER = ['Phân loại', 'Quiz', 'Vòng quay', 'Chung'] as const;
@@ -32,7 +28,6 @@ function groupByGame(): Map<string, SoundCatalogItem[]> {
 export function SoundDemoPanel({ showBackLink = true }: { showBackLink?: boolean }) {
   const [playingId, setPlayingId] = useState<GameSound | null>(null);
   const [playingAll, setPlayingAll] = useState(false);
-  const [previewMusic, setPreviewMusic] = useState<GameMusicId | null>(null);
   const cancelAllRef = useRef(false);
 
   useEffect(() => () => stopGameMusic(), []);
@@ -63,18 +58,6 @@ export function SoundDemoPanel({ showBackLink = true }: { showBackLink?: boolean
     setPlayingAll(false);
     setPlayingId(null);
     stopGameMusic();
-    setPreviewMusic(null);
-  };
-
-  const toggleMusicPreview = (id: GameMusicId) => {
-    if (previewMusic === id) {
-      stopGameMusic();
-      setPreviewMusic(null);
-      return;
-    }
-    stopGameMusic();
-    previewGameMusic(id);
-    setPreviewMusic(id);
   };
 
   const grouped = groupByGame();
@@ -91,8 +74,8 @@ export function SoundDemoPanel({ showBackLink = true }: { showBackLink?: boolean
         <div>
           <h2 className="sound-demo__title">🔊 Nghe thử âm thanh</h2>
           <p className="sound-demo__desc">
-            Nghe hiệu ứng (SFX) và <strong>nhạc nền</strong> từng game. Demo luôn phát được — kể
-            cả khi bạn đã tắt âm thanh trong game.
+            Chỉnh âm lượng hiệu ứng & nhạc nền MP3. Demo SFX luôn phát được kể cả khi đã tắt âm
+            thanh game.
           </p>
         </div>
         <SoundToggle showLabel />
@@ -106,39 +89,20 @@ export function SoundDemoPanel({ showBackLink = true }: { showBackLink?: boolean
       )}
 
       <section className="sound-demo__group sound-demo__group--music">
-        <h3 className="sound-demo__group-title">🎵 Nhạc nền (mỗi game)</h3>
-        <ul className="sound-demo__list">
-          {GAME_MUSIC_CATALOG.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                className={`sound-demo__item sound-demo__item--music ${previewMusic === item.id ? 'sound-demo__item--active' : ''}`}
-                onClick={() => toggleMusicPreview(item.id)}
-                disabled={playingAll}
-              >
-                <span className="sound-demo__play sound-demo__play--music" aria-hidden>
-                  {previewMusic === item.id ? '⏸' : '▶'}
-                </span>
-                <span className="sound-demo__item-text">
-                  <strong>{item.label}</strong>
-                  <small>{item.hint}</small>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <h3 className="sound-demo__group-title">🎵 Âm lượng</h3>
+        <AudioVolumeControls showMusicPreview />
       </section>
 
       <div className="sound-demo__actions">
         <button
           type="button"
           className="btn btn-primary"
-          disabled={playingAll || previewMusic !== null}
+          disabled={playingAll}
           onClick={() => void playAll()}
         >
           ▶ Phát tất cả hiệu ứng
         </button>
-        {(playingAll || previewMusic) && (
+        {playingAll && (
           <button type="button" className="btn btn-secondary" onClick={stopAll}>
             Dừng
           </button>

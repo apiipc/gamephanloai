@@ -5,7 +5,7 @@ import { GameViewport } from '../components/GameViewport';
 import { WheelMissionsDrawer } from '../components/WheelMissionsDrawer';
 import { WheelSpin } from '../components/WheelSpin';
 import type { WheelSpinResult, WheelState } from '../types';
-import { SoundToggle } from '../components/SoundToggle';
+import { GameAudioHud } from '../components/GameAudioHud';
 import { useGameMusic } from '../hooks/useGameMusic';
 import { playSound } from '../lib/sounds';
 import { WHEEL_PRIZE_LABEL } from '../wheel/constants';
@@ -86,7 +86,7 @@ export default function WheelPage() {
             <strong>{state?.spinsRemaining ?? 0}</strong>
           </div>
           <div className="wheel-play-header__right">
-            <SoundToggle className="wheel-play-header__sound" />
+            <GameAudioHud className="wheel-play-header__sound" />
             <Link to="/wheel/history" className="wheel-play-header__history">
               Lịch sử
             </Link>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { GameViewport } from '../components/GameViewport';
 import { TrashItemView } from '../components/TrashItemView';
 import { gameApi } from '../api/client';
-import { SoundToggle } from '../components/SoundToggle';
+import { GameAudioHud } from '../components/GameAudioHud';
 import { useGameMusic } from '../hooks/useGameMusic';
 import { playSound } from '../lib/sounds';
 import type { GameSession, TrashCategory, TrashItem } from '../types';
@@ -232,7 +232,7 @@ export default function GamePage() {
         <div className="game-hud">
           <span className="game-hud-pill">⏱ {formatTime(timeLeft)}</span>
           <span className="game-hud-pill game-hud-pill--score">⭐ {session.score}</span>
-          <SoundToggle className="game-hud__sound" />
+          <GameAudioHud className="game-hud__sound" />
         </div>
 
         <p className="game-instruction">KÉO RÁC VÀO THÙNG PHÙ HỢP</p>

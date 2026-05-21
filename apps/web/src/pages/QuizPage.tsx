@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GameViewport } from '../components/GameViewport';
 import { quizApi } from '../api/client';
-import { SoundToggle } from '../components/SoundToggle';
+import { GameAudioHud } from '../components/GameAudioHud';
 import { useGameMusic } from '../hooks/useGameMusic';
 import { playSound } from '../lib/sounds';
 import type { QuizPlayQuestion } from '../types';
@@ -216,7 +216,7 @@ export default function QuizPage() {
             </div>
             <div className="quiz-play__score-row">
               <span className="quiz-play__score">⭐ {score}</span>
-              <SoundToggle className="quiz-play__sound" />
+              <GameAudioHud className="quiz-play__sound" />
             </div>
           </div>
 
