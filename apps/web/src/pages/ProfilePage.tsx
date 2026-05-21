@@ -1,4 +1,5 @@
 import { BottomNav } from '../components/BottomNav';
+import { SoundToggle } from '../components/SoundToggle';
 import { useAuth } from '../context/AuthContext';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -36,6 +37,24 @@ export default function ProfilePage() {
           <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--green-600)' }}>
             ⭐ {user?.greenPoints ?? 0}
           </p>
+        </div>
+        <div
+          className="card"
+          style={{
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
+          <div>
+            <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 4 }}>Âm thanh game</p>
+            <p style={{ fontSize: 12, color: 'var(--gray-600)' }}>
+              Hiệu ứng khi chơi phân loại, quiz, vòng quay
+            </p>
+          </div>
+          <SoundToggle showLabel />
         </div>
         <button className="btn btn-secondary" style={{ width: '100%' }} onClick={logout}>
           Đăng xuất

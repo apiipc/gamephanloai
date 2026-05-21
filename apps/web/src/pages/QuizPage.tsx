@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GameViewport } from '../components/GameViewport';
 import { quizApi } from '../api/client';
+import { SoundToggle } from '../components/SoundToggle';
+import { playSound } from '../lib/sounds';
 import type { QuizPlayQuestion } from '../types';
 import {
   OPTION_STYLES,
@@ -38,6 +40,7 @@ export default function QuizPage() {
 
   const finishedRef = useRef(false);
   const processingRef = useRef(false);
+  const prevTimeLeftRef = useRef(10);
 
   useEffect(() => {
     (async () => {
@@ -47,6 +50,7 @@ export default function QuizPage() {
         setQuestions(data.questions);
         setSecondsPerQuestion(data.secondsPerQuestion);
         setTimeLeft(data.secondsPerQuestion);
+        prevTimeLeftRef.current = data.secondsPerQuestion;
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : 'Không bắt đầu được quiz');
       } finally {
@@ -58,6 +62,7 @@ export default function QuizPage() {
   const finishQuiz = useCallback(async () => {
     if (finishedRef.current || !sessionId) return;
     finishedRef.current = true;
+    playSound('finish');
     try {
       const result = await quizApi.finish(sessionId);
       navigate('/quiz/result', {
@@ -85,6 +90,7 @@ export default function QuizPage() {
     } else {
       setIndex((i) => i + 1);
       setTimeLeft(secondsPerQuestion);
+      prevTimeLeftRef.current = secondsPerQuestion;
     }
   }, [index, questions.length, secondsPerQuestion, finishQuiz]);
 
@@ -111,6 +117,8 @@ export default function QuizPage() {
               ? ` 🔥 Combo +${res.comboBonus}!`
               : '';
 
+          playSound(res.isCorrect ? 'correct' : 'wrong');
+          if (res.comboBonus && res.comboBonus > 0) playSound('combo');
           setFeedback({
             type: res.isCorrect ? 'correct' : 'wrong',
             title: res.isCorrect ? 'CHÍNH XÁC!' : 'CHƯA ĐÚNG!',
@@ -121,6 +129,7 @@ export default function QuizPage() {
             comboBonus: res.comboBonus,
           });
         } else {
+          playSound('timeout');
           setComboStreak(0);
           setFeedback({
             type: 'timeout',
@@ -144,6 +153,10 @@ export default function QuizPage() {
       submitAnswer(null);
       return;
     }
+    if (timeLeft <= 3 && timeLeft < prevTimeLeftRef.current) {
+      playSound('tick');
+    }
+    prevTimeLeftRef.current = timeLeft;
     const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000);
     return () => clearTimeout(t);
   }, [timeLeft, loading, feedback, processing, questions.length, submitAnswer]);
@@ -198,7 +211,10 @@ export default function QuizPage() {
                 {difficulty}
               </span>
             </div>
-            <div className="quiz-play__score">⭐ {score}</div>
+            <div className="quiz-play__score-row">
+              <span className="quiz-play__score">⭐ {score}</span>
+              <SoundToggle className="quiz-play__sound" />
+            </div>
           </div>
 
           <div className="quiz-progress" aria-label="Tiến độ">

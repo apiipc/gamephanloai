@@ -5,6 +5,8 @@ import { GameViewport } from '../components/GameViewport';
 import { WheelMissionsDrawer } from '../components/WheelMissionsDrawer';
 import { WheelSpin } from '../components/WheelSpin';
 import type { WheelSpinResult, WheelState } from '../types';
+import { SoundToggle } from '../components/SoundToggle';
+import { playSound } from '../lib/sounds';
 import { WHEEL_PRIZE_LABEL } from '../wheel/constants';
 
 export default function WheelPage() {
@@ -31,6 +33,7 @@ export default function WheelPage() {
     if (!state || spinning || state.spinsRemaining <= 0) return;
     setSpinning(true);
     setError('');
+    playSound('spin');
     try {
       const res = await wheelApi.spin();
       const idx = state.prizes.findIndex((p) => p.id === res.prize.id);
@@ -42,6 +45,7 @@ export default function WheelPage() {
       setRotationDeg((prev) => prev + target - (prev % 360));
       await new Promise((r) => setTimeout(r, 4200));
       setResult(res);
+      playSound('win');
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Không quay được');
@@ -78,9 +82,12 @@ export default function WheelPage() {
             <span className="wheel-play-header__label">Lượt quay</span>
             <strong>{state?.spinsRemaining ?? 0}</strong>
           </div>
-          <Link to="/wheel/history" className="wheel-play-header__history">
-            Lịch sử
-          </Link>
+          <div className="wheel-play-header__right">
+            <SoundToggle className="wheel-play-header__sound" />
+            <Link to="/wheel/history" className="wheel-play-header__history">
+              Lịch sử
+            </Link>
+          </div>
         </header>
 
         {error && <p className="wheel-play-error">{error}</p>}

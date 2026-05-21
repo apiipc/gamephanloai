@@ -137,6 +137,47 @@ input, select {
   font-size: 16px;
 }
 
+.game-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.game-hud-pill--score {
+  color: var(--green-600);
+}
+
+.game-hud__sound {
+  flex-shrink: 0;
+}
+
+.sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.12s;
+}
+
+.sound-toggle:active {
+  transform: scale(0.94);
+}
+
+.sound-toggle__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-600);
+}
+
 .game-instruction {
   text-align: center;
   font-size: 13px;
@@ -586,6 +627,17 @@ input, select {
 .quiz-difficulty--hard {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.quiz-play__score-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.quiz-play__sound {
+  flex-shrink: 0;
 }
 
 .quiz-play__score {
@@ -1746,6 +1798,16 @@ th {
   font-size: 14px;
   font-weight: 700;
   color: var(--green-700);
+}
+
+.wheel-play-header__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wheel-play-header__sound {
+  padding: 4px 8px;
 }
 
 .wheel-play-header__spins {

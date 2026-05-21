@@ -2,6 +2,7 @@ import { GameViewport } from '../components/GameViewport';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { leaderboardApi } from '../api/client';
+import { playSound } from '../lib/sounds';
 
 interface ResultState {
   score: number;
@@ -22,6 +23,7 @@ export default function ResultPage() {
       navigate('/play');
       return;
     }
+    playSound('win');
     leaderboardApi.myRank('sort').then((r) => setRank(r?.rank ?? null)).catch(() => {});
   }, [data, navigate]);
 

@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { GameViewport } from '../components/GameViewport';
 import { QUIZ_SCORING } from '../quiz/constants';
+import { playSound } from '../lib/sounds';
 
 interface QuizResultState {
   score: number;
@@ -18,7 +19,11 @@ export default function QuizResultPage() {
   const data = state as QuizResultState | null;
 
   useEffect(() => {
-    if (!data) navigate('/quiz');
+    if (!data) {
+      navigate('/quiz');
+      return;
+    }
+    playSound('win');
   }, [data, navigate]);
 
   if (!data) return null;

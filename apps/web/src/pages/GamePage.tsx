@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { GameViewport } from '../components/GameViewport';
 import { TrashItemView } from '../components/TrashItemView';
 import { gameApi } from '../api/client';
+import { SoundToggle } from '../components/SoundToggle';
+import { playSound } from '../lib/sounds';
 import type { GameSession, TrashCategory, TrashItem } from '../types';
 import { BIN_IMAGES } from '../types';
 
@@ -61,6 +63,7 @@ export default function GamePage() {
 
   const finishedRef = useRef(false);
   const processingRef = useRef(false);
+  const prevTimeLeftRef = useRef(45);
   const draggingRef = useRef(false);
   const sessionRef = useRef<GameSession | null>(null);
   const currentRef = useRef<TrashItem | null>(null);
@@ -91,6 +94,7 @@ export default function GamePage() {
   const finishGame = useCallback(async () => {
     if (finishedRef.current || !sessionRef.current) return;
     finishedRef.current = true;
+    playSound('finish');
     try {
       const result = await gameApi.finish(sessionRef.current.id);
       navigate('/result', {
@@ -112,6 +116,10 @@ export default function GamePage() {
       const sess = sessionRef.current;
       if (!sess) return;
       const left = getTimeLeft(sess);
+      if (left <= 5 && left < prevTimeLeftRef.current) {
+        playSound('tick');
+      }
+      prevTimeLeftRef.current = left;
       setTimeLeft(left);
       if (left <= 0) finishGame();
     };
@@ -135,6 +143,7 @@ export default function GamePage() {
     try {
       const res = await gameApi.answer(sess.id, item.id, bin);
       setSession(res.session);
+      playSound(res.isCorrect ? 'correct' : 'wrong');
       setFeedback({
         type: res.isCorrect ? 'correct' : 'wrong',
         text: res.isCorrect ? 'CHÍNH XÁC! +10 điểm' : 'SAI RỒI! -5 điểm',
@@ -161,6 +170,7 @@ export default function GamePage() {
 
   const startDrag = (clientX: number, clientY: number) => {
     if (processingRef.current || feedback) return;
+    playSound('pickup');
     draggingRef.current = true;
     setIsDragging(true);
     setGhostPos({ x: clientX, y: clientY });
@@ -216,11 +226,10 @@ export default function GamePage() {
         className="page game-page"
         style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 40px)' }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div className="game-hud">
           <span className="game-hud-pill">⏱ {formatTime(timeLeft)}</span>
-          <span className="game-hud-pill" style={{ color: 'var(--green-600)' }}>
-            ⭐ {session.score}
-          </span>
+          <span className="game-hud-pill game-hud-pill--score">⭐ {session.score}</span>
+          <SoundToggle className="game-hud__sound" />
         </div>
 
         <p className="game-instruction">KÉO RÁC VÀO THÙNG PHÙ HỢP</p>

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { useAuth } from '../context/AuthContext';
+import { playSound } from '../lib/sounds';
 
 const GAMES = [
   {
@@ -65,7 +66,11 @@ export default function PlayPage() {
               type="button"
               className="card play-game-card"
               style={{ background: g.bg, textAlign: 'left', width: '100%' }}
-              onClick={() => g.active && navigate(g.path)}
+              onClick={() => {
+                if (!g.active) return;
+                playSound('click');
+                navigate(g.path);
+              }}
               disabled={!g.active}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
