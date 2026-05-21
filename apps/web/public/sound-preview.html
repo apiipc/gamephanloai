@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nghe thử âm thanh game</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font-family: Nunito, system-ui, sans-serif;
+        margin: 0;
+        padding: 20px 16px 40px;
+        background: linear-gradient(180deg, #ecfdf5, #fff);
+        color: #1f2937;
+        max-width: 480px;
+        margin-inline: auto;
+      }
+      h1 { font-size: 22px; color: #15803d; margin: 0 0 8px; }
+      .desc { font-size: 14px; color: #6b7280; line-height: 1.45; margin-bottom: 16px; }
+      .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+      button {
+        font-family: inherit;
+        font-weight: 700;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 18px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .btn-primary { background: #16a34a; color: #fff; }
+      .btn-secondary { background: #f3f4f6; color: #374151; }
+      .group { margin-bottom: 18px; }
+      .group h2 {
+        font-size: 14px;
+        color: #166534;
+        margin: 0 0 8px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid #bbf7d0;
+      }
+      .item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        border-radius: 12px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        cursor: pointer;
+        text-align: left;
+      }
+      .item:hover { border-color: #86efac; background: #f0fdf4; }
+      .item.active { border-color: #22c55e; background: #f0fdf4; }
+      .play {
+        width: 36px; height: 36px; border-radius: 50%;
+        background: #16a34a; color: #fff;
+        display: grid; place-items: center; font-size: 14px; flex-shrink: 0;
+      }
+      .item strong { display: block; font-size: 15px; }
+      .item small { font-size: 12px; color: #6b7280; }
+      .hint { font-size: 12px; color: #9ca3af; margin-top: 16px; }
+    </style>
+  </head>
+  <body>
+    <h1>🔊 Nghe thử âm thanh</h1>
+    <p class="desc">
+      Bấm từng nút ▶ để nghe mẫu (giống trong game). Trang này chạy local — không cần đăng nhập.
+    </p>
+    <div class="actions">
+      <button type="button" class="btn-primary" id="playAll">▶ Phát tất cả</button>
+      <button type="button" class="btn-secondary" id="stopAll" hidden>Dừng</button>
+    </div>
+    <div id="list"></div>
+    <p class="hint">
+      Production:
+      <a href="https://hocxanh.up.railway.app/sound-preview.html">hocxanh.up.railway.app/sound-preview.html</a>
+      · trong app (đăng nhập): <a href="/sounds">/sounds</a>
+    </p>
+
+    <script>
+      const CATALOG = [
+        { id: 'pickup', label: 'Nhấc rác', hint: 'Bắt đầu kéo vật phẩm', game: 'Phân loại' },
+        { id: 'correct', label: 'Đúng', hint: 'Trả lời đúng', game: 'Chung' },
+        { id: 'wrong', label: 'Sai', hint: 'Trả lời sai', game: 'Chung' },
+        { id: 'tick', label: 'Tích tắc', hint: 'Đếm giờ cuối', game: 'Chung' },
+        { id: 'timeout', label: 'Hết giờ', hint: 'Quiz — hết thời gian', game: 'Quiz' },
+        { id: 'combo', label: 'Combo', hint: 'Chuỗi đúng liên tiếp', game: 'Quiz' },
+        { id: 'spin', label: 'Quay vòng', hint: 'Vòng quay xanh', game: 'Vòng quay' },
+        { id: 'win', label: 'Trúng thưởng', hint: 'Kết quả / trúng giải', game: 'Chung' },
+        { id: 'finish', label: 'Hết trận', hint: 'Kết thúc lượt chơi', game: 'Chung' },
+        { id: 'click', label: 'Chọn menu', hint: 'Chọn game', game: 'Chung' },
+      ];
+      const ORDER = ['Phân loại', 'Quiz', 'Vòng quay', 'Chung'];
+
+      let ctx = null;
+      function ensureCtx() {
+        if (!ctx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return null;
+          ctx = new Ctx();
+        }
+        if (ctx.state === 'suspended') ctx.resume();
+        return ctx;
+      }
+      function tone(freq, dur, opts = {}) {
+        const audio = ensureCtx();
+        if (!audio) return;
+        const when = opts.when ?? audio.currentTime;
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        osc.type = opts.type || 'sine';
+        osc.frequency.setValueAtTime(freq, when);
+        if (opts.slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(opts.slideTo, 1), when + dur);
+        const peak = opts.gain ?? 0.22;
+        gain.gain.setValueAtTime(0.0001, when);
+        gain.gain.exponentialRampToValueAtTime(peak, when + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+        osc.connect(gain);
+        gain.connect(audio.destination);
+        osc.start(when);
+        osc.stop(when + dur + 0.02);
+      }
+      function chord(notes, dur, g = 0.14) {
+        const audio = ensureCtx();
+        if (!audio) return;
+        const when = audio.currentTime;
+        notes.forEach((f, i) => tone(f, dur, { gain: g, when: when + i * 0.05 }));
+      }
+      const PLAYERS = {
+        correct: () => chord([523.25, 659.25, 783.99], 0.28, 0.16),
+        wrong: () => tone(180, 0.22, { type: 'square', gain: 0.1, slideTo: 120 }),
+        pickup: () => tone(440, 0.06, { gain: 0.12 }),
+        tick: () => tone(880, 0.04, { gain: 0.08 }),
+        timeout: () => tone(330, 0.2, { type: 'triangle', gain: 0.12, slideTo: 200 }),
+        finish: () => chord([392, 523.25, 659.25, 783.99], 0.45, 0.18),
+        win: () => chord([523.25, 659.25, 783.99, 1046.5], 0.55, 0.2),
+        spin: () => {
+          const audio = ensureCtx();
+          const when = audio.currentTime;
+          for (let i = 0; i < 6; i++) tone(200 + i * 40, 0.05, { type: 'triangle', gain: 0.06, when: when + i * 0.07 });
+        },
+        combo: () => chord([659.25, 880, 1046.5], 0.2, 0.15),
+        click: () => tone(600, 0.03, { gain: 0.07 }),
+      };
+      function play(id) {
+        ensureCtx();
+        PLAYERS[id]?.();
+      }
+
+      let cancelAll = false;
+      let activeBtn = null;
+
+      function render() {
+        const list = document.getElementById('list');
+        list.innerHTML = '';
+        for (const game of ORDER) {
+          const items = CATALOG.filter((c) => c.game === game);
+          if (!items.length) continue;
+          const sec = document.createElement('section');
+          sec.className = 'group';
+          sec.innerHTML = '<h2>' + game + '</h2>';
+          for (const item of items) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'item';
+            btn.dataset.id = item.id;
+            btn.innerHTML =
+              '<span class="play">▶</span><span><strong>' +
+              item.label +
+              '</strong><small>' +
+              item.hint +
+              '</small></span>';
+            btn.addEventListener('click', () => {
+              if (activeBtn) activeBtn.classList.remove('active');
+              btn.classList.add('active');
+              activeBtn = btn;
+              play(item.id);
+              setTimeout(() => btn.classList.remove('active'), 400);
+            });
+            sec.appendChild(btn);
+          }
+          list.appendChild(sec);
+        }
+      }
+      render();
+
+      document.getElementById('playAll').addEventListener('click', async () => {
+        cancelAll = false;
+        document.getElementById('stopAll').hidden = false;
+        for (const item of CATALOG) {
+          if (cancelAll) break;
+          const btn = document.querySelector('[data-id="' + item.id + '"]');
+          if (btn) {
+            btn.classList.add('active');
+            activeBtn = btn;
+          }
+          play(item.id);
+          await new Promise((r) => setTimeout(r, 750));
+          if (btn) btn.classList.remove('active');
+        }
+        document.getElementById('stopAll').hidden = true;
+      });
+      document.getElementById('stopAll').addEventListener('click', () => {
+        cancelAll = true;
+        document.getElementById('stopAll').hidden = true;
+      });
+    </script>
+  </body>
+</html>
