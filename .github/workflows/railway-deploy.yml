@@ -18,6 +18,7 @@ on:
       - 'Dockerfile.web'
       - '.dockerignore'
       - 'package-lock.json'
+      - 'railway.toml'
       - '.github/workflows/railway-deploy.yml'
   workflow_dispatch:
 

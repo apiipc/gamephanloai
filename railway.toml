@@ -1,0 +1,11 @@
+# Railway config — service app (Root Directory trống, Dockerfile gốc)
+# https://docs.railway.com/reference/config-as-code
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "sh -c \"npx prisma db push && node dist/main.js\""
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
