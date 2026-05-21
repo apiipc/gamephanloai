@@ -5,8 +5,6 @@ import { GameViewport } from '../components/GameViewport';
 import { WheelMissionsDrawer } from '../components/WheelMissionsDrawer';
 import { WheelSpin } from '../components/WheelSpin';
 import type { WheelSpinResult, WheelState } from '../types';
-import { GameAudioHud } from '../components/GameAudioHud';
-import { useGameMusic } from '../hooks/useGameMusic';
 import { playSound } from '../lib/sounds';
 import { WHEEL_PRIZE_LABEL } from '../wheel/constants';
 
@@ -29,8 +27,6 @@ export default function WheelPage() {
   useEffect(() => {
     load().catch((e) => setError(e instanceof Error ? e.message : 'Không tải được'));
   }, [load]);
-
-  useGameMusic('wheel', Boolean(state));
 
   const handleSpin = async () => {
     if (!state || spinning || state.spinsRemaining <= 0) return;
@@ -85,12 +81,9 @@ export default function WheelPage() {
             <span className="wheel-play-header__label">Lượt quay</span>
             <strong>{state?.spinsRemaining ?? 0}</strong>
           </div>
-          <div className="wheel-play-header__right">
-            <GameAudioHud className="wheel-play-header__sound" />
-            <Link to="/wheel/history" className="wheel-play-header__history">
-              Lịch sử
-            </Link>
-          </div>
+          <Link to="/wheel/history" className="wheel-play-header__history">
+            Lịch sử
+          </Link>
         </header>
 
         {error && <p className="wheel-play-error">{error}</p>}

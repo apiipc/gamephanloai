@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { stopGameMusic } from '../lib/gameMusic';
 import {
@@ -29,8 +29,6 @@ export function SoundDemoPanel({ showBackLink = true }: { showBackLink?: boolean
   const [playingId, setPlayingId] = useState<GameSound | null>(null);
   const [playingAll, setPlayingAll] = useState(false);
   const cancelAllRef = useRef(false);
-
-  useEffect(() => () => stopGameMusic(), []);
 
   const playOne = (id: SoundCatalogItem['id']) => {
     setPlayingId(id);

@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { GameViewport } from '../components/GameViewport';
 import { TrashItemView } from '../components/TrashItemView';
 import { gameApi } from '../api/client';
-import { GameAudioHud } from '../components/GameAudioHud';
-import { useGameMusic } from '../hooks/useGameMusic';
 import { playSound } from '../lib/sounds';
 import type { GameSession, TrashCategory, TrashItem } from '../types';
 import { BIN_IMAGES } from '../types';
@@ -78,8 +76,6 @@ export default function GamePage() {
   sessionRef.current = session;
   currentRef.current = current;
   itemsRef.current = items;
-
-  useGameMusic('sort', Boolean(session && current));
 
   useEffect(() => {
     (async () => {
@@ -232,7 +228,6 @@ export default function GamePage() {
         <div className="game-hud">
           <span className="game-hud-pill">⏱ {formatTime(timeLeft)}</span>
           <span className="game-hud-pill game-hud-pill--score">⭐ {session.score}</span>
-          <GameAudioHud className="game-hud__sound" />
         </div>
 
         <p className="game-instruction">KÉO RÁC VÀO THÙNG PHÙ HỢP</p>

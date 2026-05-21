@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { startGameMusic } from '../lib/gameMusic';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -16,6 +17,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
+      startGameMusic();
       navigate('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Đăng nhập thất bại');

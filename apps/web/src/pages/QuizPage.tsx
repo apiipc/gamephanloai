@@ -2,8 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GameViewport } from '../components/GameViewport';
 import { quizApi } from '../api/client';
-import { GameAudioHud } from '../components/GameAudioHud';
-import { useGameMusic } from '../hooks/useGameMusic';
 import { playSound } from '../lib/sounds';
 import type { QuizPlayQuestion } from '../types';
 import {
@@ -42,8 +40,6 @@ export default function QuizPage() {
   const finishedRef = useRef(false);
   const processingRef = useRef(false);
   const prevTimeLeftRef = useRef(10);
-
-  useGameMusic('quiz', !loading && questions.length > 0);
 
   useEffect(() => {
     (async () => {
@@ -214,10 +210,7 @@ export default function QuizPage() {
                 {difficulty}
               </span>
             </div>
-            <div className="quiz-play__score-row">
-              <span className="quiz-play__score">⭐ {score}</span>
-              <GameAudioHud className="quiz-play__sound" />
-            </div>
+            <div className="quiz-play__score">⭐ {score}</div>
           </div>
 
           <div className="quiz-progress" aria-label="Tiến độ">

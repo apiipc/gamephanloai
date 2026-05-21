@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { useAuth } from '../context/AuthContext';
-import { startGameMusic } from '../lib/gameMusic';
 import { playSound } from '../lib/sounds';
 
 const GAMES = [
@@ -70,7 +69,6 @@ export default function PlayPage() {
               onClick={() => {
                 if (!g.active) return;
                 playSound('click');
-                startGameMusic();
                 navigate(g.path);
               }}
               disabled={!g.active}

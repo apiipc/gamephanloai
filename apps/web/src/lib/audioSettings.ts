@@ -3,7 +3,7 @@ const MUSIC_VOL_KEY = 'game-music-volume';
 
 /** Mặc định cao hơn vì SFX tổng hợp nghe nhỏ */
 export const DEFAULT_SFX_VOLUME = 0.92;
-export const DEFAULT_MUSIC_VOLUME = 0.55;
+export const DEFAULT_MUSIC_VOLUME = 0.72;
 
 const listeners = new Set<() => void>();
 

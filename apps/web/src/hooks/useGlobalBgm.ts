@@ -3,15 +3,20 @@ import {
   startGameMusic,
   stopGameMusic,
   unlockBgmFromGesture,
-  type GameMusicId,
 } from '../lib/gameMusic';
 
-/** Phát nhạc nền khi vào màn chơi; retry sau thao tác chạm nếu trình duyệt chặn autoplay */
-export function useGameMusic(id: GameMusicId, active = true) {
+/**
+ * Nhạc nền chạy xuyên suốt app (lặp) — không dừng khi đổi trang game.
+ * Chỉ dừng khi đăng xuất hoặc tắt âm thanh.
+ */
+export function useGlobalBgm(active: boolean) {
   useEffect(() => {
-    if (!active) return;
+    if (!active) {
+      stopGameMusic();
+      return;
+    }
 
-    startGameMusic(id);
+    startGameMusic();
 
     const onInteract = () => unlockBgmFromGesture();
     document.addEventListener('pointerdown', onInteract, true);
@@ -20,7 +25,6 @@ export function useGameMusic(id: GameMusicId, active = true) {
     return () => {
       document.removeEventListener('pointerdown', onInteract, true);
       document.removeEventListener('keydown', onInteract, true);
-      stopGameMusic();
     };
-  }, [id, active]);
+  }, [active]);
 }

@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { authApi } from '../api/client';
+import { startGameMusic, stopGameMusic } from '../lib/gameMusic';
 import type { User } from '../types';
 
 interface AuthContextValue {
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const me = await authApi.me();
       setUser(me);
+      startGameMusic();
     } catch {
       localStorage.removeItem('token');
     } finally {
@@ -47,9 +49,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { token, user: u } = await authApi.login(email, password);
     localStorage.setItem('token', token);
     setUser(u);
+    startGameMusic();
   };
 
   const logout = () => {
+    stopGameMusic();
     localStorage.removeItem('token');
     setUser(null);
   };
