@@ -56,7 +56,6 @@ input, select {
   flex-direction: column;
   background: #fff;
   box-shadow: var(--shadow);
-  padding-top: 88px;
 }
 
 /* Nền full màn hình 16:9 khi chơi game */
@@ -273,10 +272,17 @@ input, select {
 
 .audio-settings-card__head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 14px;
+}
+
+.audio-settings-card__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--green-800);
 }
 
 .audio-settings-card {
@@ -363,33 +369,6 @@ input, select {
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   border: 1px solid var(--gray-100);
-}
-
-.app-audio-bar {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 250;
-  width: min(480px, 100vw);
-  padding: 8px 12px 10px;
-  background: rgba(255, 255, 255, 0.97);
-  border-bottom: 1px solid var(--green-100);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-}
-
-.app-audio-bar__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.app-audio-bar__title {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--green-800);
 }
 
 .sound-demo__list {

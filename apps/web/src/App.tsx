@@ -1,5 +1,4 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { AppAudioBar } from './components/AppAudioBar';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { GlobalBgm } from './components/GlobalBgm';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
@@ -22,8 +21,6 @@ import WheelHistoryPage from './pages/WheelHistoryPage';
 
 export default function App() {
   const { user, loading, isAdmin } = useAuth();
-  const location = useLocation();
-  const showAudioBar = Boolean(user) && location.pathname !== '/login';
 
   if (loading) {
     return (
@@ -36,7 +33,6 @@ export default function App() {
   return (
     <>
       {user && <GlobalBgm />}
-      {showAudioBar && <AppAudioBar />}
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route

@@ -9,7 +9,6 @@ import {
   type GameSound,
   type SoundCatalogItem,
 } from '../lib/sounds';
-import { AudioVolumeControls } from './AudioVolumeControls';
 import { SoundToggle } from './SoundToggle';
 
 const GAME_ORDER = ['Phân loại', 'Quiz', 'Vòng quay', 'Chung'] as const;
@@ -70,10 +69,10 @@ export function SoundDemoPanel({ showBackLink = true }: { showBackLink?: boolean
 
       <div className="sound-demo__head">
         <div>
-          <h2 className="sound-demo__title">🔊 Nghe thử âm thanh</h2>
+          <h2 className="sound-demo__title">📋 Hiệu ứng âm thanh</h2>
           <p className="sound-demo__desc">
-            Chỉnh âm lượng hiệu ứng & nhạc nền MP3. Demo SFX luôn phát được kể cả khi đã tắt âm
-            thanh game.
+            Nghe thử từng SFX trong game. Chỉnh âm lượng tại{' '}
+            <Link to="/profile">Cài đặt âm thanh</Link> trong Hồ sơ.
           </p>
         </div>
         <SoundToggle showLabel />
@@ -85,11 +84,6 @@ export function SoundDemoPanel({ showBackLink = true }: { showBackLink?: boolean
           thật.
         </p>
       )}
-
-      <section className="sound-demo__group sound-demo__group--music">
-        <h3 className="sound-demo__group-title">🎵 Âm lượng</h3>
-        <AudioVolumeControls showMusicPreview />
-      </section>
 
       <div className="sound-demo__actions">
         <button
