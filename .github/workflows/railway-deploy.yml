@@ -49,6 +49,11 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli@latest
 
+      - name: Bump deploy marker (tránh Railway skip build do watch paths)
+        run: |
+          echo "${GITHUB_SHA} $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> .railway-deploy-bump
+          git status --short .railway-deploy-bump
+
       - name: railway up (chờ build Docker — không dùng --detach)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
