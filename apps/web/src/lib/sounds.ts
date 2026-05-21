@@ -4,7 +4,7 @@
  */
 
 import { getSfxVolume, subscribeAudioSettings } from './audioSettings';
-import { applyMusicVolume, stopGameMusic } from './gameMusic';
+import { applyMusicVolume, stopGameMusic, unlockBgmFromGesture } from './gameMusic';
 
 export type GameSound =
   | 'correct'
@@ -170,6 +170,7 @@ export function setSoundEnabled(on: boolean): void {
   } else {
     syncSfxBusGain();
     applyMusicVolume();
+    unlockBgmFromGesture();
     if (ctx) void ctx.resume();
   }
 }
@@ -216,6 +217,7 @@ export async function playAllSoundPreviews(
 export function installSoundUnlock(): () => void {
   const onFirst = () => {
     unlockAudio();
+    unlockBgmFromGesture();
     document.removeEventListener('pointerdown', onFirst, true);
     document.removeEventListener('keydown', onFirst, true);
   };

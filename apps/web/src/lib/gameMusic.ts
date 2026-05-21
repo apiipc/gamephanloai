@@ -1,7 +1,8 @@
+import bgmSrc from '../assets/music/Jumping_Over_Puddles.mp3';
 import { getMusicVolume } from './audioSettings';
 
-/** Nhạc nền chung cho mọi mini game */
-export const BGM_URL = '/music/Jumping_Over_Puddles.mp3';
+/** URL do Vite bundle — luôn có trong `dist/assets/` khi deploy */
+export const BGM_URL = bgmSrc;
 export const BGM_TITLE = 'Jumping Over Puddles';
 
 const ENABLED_KEY = 'game-sound-enabled';
@@ -10,6 +11,8 @@ export type GameMusicId = 'sort' | 'quiz' | 'wheel';
 
 let bgmAudio: HTMLAudioElement | null = null;
 let isPlaying = false;
+let wantsPlay = false;
+let loadError = false;
 
 function isSoundEnabledLocal(): boolean {
   try {
@@ -26,6 +29,10 @@ function getBgmElement(): HTMLAudioElement {
     bgmAudio = new Audio(BGM_URL);
     bgmAudio.loop = true;
     bgmAudio.preload = 'auto';
+    bgmAudio.addEventListener('error', () => {
+      loadError = true;
+      console.warn('[BGM] Không tải được file nhạc:', BGM_URL);
+    });
   }
   return bgmAudio;
 }
@@ -35,41 +42,69 @@ export function applyMusicVolume(forceAudible = false): void {
   if (!el) return;
   const audible = forceAudible || isSoundEnabledLocal();
   el.volume = audible ? getMusicVolume() : 0;
+  el.muted = !audible;
 }
 
-async function playBgm(forcePreview = false): Promise<void> {
-  if (!forcePreview && !isSoundEnabledLocal()) return;
+async function tryPlay(forcePreview = false): Promise<boolean> {
+  if (loadError) return false;
+  if (!forcePreview && !isSoundEnabledLocal()) {
+    wantsPlay = false;
+    return false;
+  }
+
   const el = getBgmElement();
   applyMusicVolume(forcePreview);
+
   try {
     await el.play();
     isPlaying = true;
+    wantsPlay = !forcePreview;
+    return true;
   } catch {
     isPlaying = false;
+    wantsPlay = !forcePreview;
+    return false;
   }
 }
 
-/** Bắt đầu nhạc nền (cùng một track cho mọi game) */
+/** Gọi sau thao tác chạm/click (mở khóa autoplay trình duyệt) */
+export function unlockBgmFromGesture(): void {
+  if (!wantsPlay) return;
+  void tryPlay(false);
+}
+
+/** Đánh dấu cần phát nhạc nền — thử ngay, nếu bị chặn sẽ phát sau lần chạm tiếp theo */
 export function startGameMusic(_id?: GameMusicId): void {
+  if (!isSoundEnabledLocal()) return;
+  wantsPlay = true;
   if (isPlaying) {
     applyMusicVolume();
     return;
   }
-  void playBgm(false);
+  void tryPlay(false);
 }
 
-/** Nghe thử nhạc nền */
 export function previewGameMusic(_id?: GameMusicId): void {
-  void playBgm(true);
+  wantsPlay = true;
+  void tryPlay(true);
 }
 
 export function stopGameMusic(): void {
+  wantsPlay = false;
   if (!bgmAudio) return;
   bgmAudio.pause();
-  bgmAudio.currentTime = 0;
+  try {
+    bgmAudio.currentTime = 0;
+  } catch {
+    /* ignore */
+  }
   isPlaying = false;
 }
 
 export function isGameMusicPlaying(): boolean {
   return isPlaying && Boolean(bgmAudio && !bgmAudio.paused);
+}
+
+export function isBgmLoadError(): boolean {
+  return loadError;
 }
