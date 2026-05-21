@@ -1,10 +1,5 @@
-# Deploy **web + API gộp** một image (Dockerfile gốc) lên Railway khi push main.
-#
-# Thiết lập 1 lần:
-#   gh secret set RAILWAY_TOKEN --repo your/repo
-# Trên Railway: một service (vd. api) — Root Directory trống — không cần RAILWAY_DOCKERFILE_PATH.
-#
-# Biến FRONTEND_URL / DATABASE_URL / JWT_SECRET: set trên Railway (vd. script railway-provision.sh).
+# Deploy unified Docker image (web + API) lên Railway.
+# Cần GitHub secret: RAILWAY_TOKEN (Project Token từ Railway → Settings → Tokens)
 
 name: Deploy to Railway
 
@@ -23,18 +18,38 @@ on:
   workflow_dispatch:
 
 env:
+  RAILWAY_PROJECT_ID: 1323cca9-cdce-4443-b158-f6f7c903a453
   RAILWAY_ENVIRONMENT: production
   RAILWAY_SERVICE: api
+  RAILWAY_APP_URL: https://hocxanh.up.railway.app
 
 jobs:
   deploy:
-    name: Deploy unified stack
+    name: Build & deploy to Railway
     runs-on: ubuntu-latest
-    container: ghcr.io/railwayapp/cli:latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
-      - name: railway up
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Build web (lấy hash bundle để verify sau deploy)
+        run: |
+          npm ci
+          npm run build -w apps/web
+          ls apps/web/dist/assets/Jumping_Over_Puddles*.mp3
+          JS=$(grep -oE 'index-[A-Za-z0-9_-]+\.js' apps/web/dist/index.html | head -1)
+          echo "EXPECTED_JS=$JS" >> "$GITHUB_ENV"
+          echo "Expect production to serve: /assets/$JS"
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli@latest
+
+      - name: railway up (chờ build Docker — không dùng --detach)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
@@ -42,9 +57,26 @@ jobs:
             echo "::error::Thiếu GitHub secret RAILWAY_TOKEN"
             exit 1
           fi
-          # Không dùng `railway up .` — một số bản CLI báo "prefix not found" khi có path `.`
           railway up \
+            --project "$RAILWAY_PROJECT_ID" \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service "$RAILWAY_SERVICE" \
-            --detach \
-            --message "unified deploy from GitHub Actions"
+            --ci \
+            --message "GHA deploy ${GITHUB_SHA::7}"
+
+      - name: Verify production đã nhận bundle mới
+        run: |
+          for i in $(seq 1 24); do
+            HTML=$(curl -sf "$RAILWAY_APP_URL/" || true)
+            if echo "$HTML" | grep -q "$EXPECTED_JS"; then
+              echo "OK — $RAILWAY_APP_URL đã chạy $EXPECTED_JS"
+              curl -sfI "$RAILWAY_APP_URL/assets/$EXPECTED_JS" | head -5
+              exit 0
+            fi
+            LIVE=$(echo "$HTML" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1 || true)
+            echo "Lần $i: production=$LIVE mong đợi=$EXPECTED_JS — chờ 30s..."
+            sleep 30
+          done
+          echo "::error::Production vẫn chưa cập nhật bundle"
+          curl -sf "$RAILWAY_APP_URL/" | grep -oE 'index-[A-Za-z0-9_-]+\.(js|css)' || true
+          exit 1
