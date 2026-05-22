@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { downloadPlayerScoresExcel } from '../admin/playerScoresExcel';
 import { adminApi } from '../api/client';
 
 export interface GameScoreSummary {
@@ -13,7 +14,6 @@ export interface PlayerScoreRow {
   fullName: string;
   email: string;
   className: string | null;
-  greenPoints: number;
   sortPoints: number;
   sortPlays: number;
   quizPoints: number;
@@ -152,10 +152,25 @@ export function AdminOverviewPanel({
       </div>
 
       <div className="card admin-overview__table-card">
-        <h3 className="admin-overview__section-title">Bảng điểm từng người chơi</h3>
+        <div className="admin-overview__table-head">
+          <h3 className="admin-overview__section-title" style={{ marginBottom: 0 }}>
+            Bảng điểm từng người chơi
+          </h3>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={playerScores.length === 0}
+            onClick={() => {
+              downloadPlayerScoresExcel(playerScores);
+              notify(`Đã tải Excel (${playerScores.length} học sinh)`);
+            }}
+          >
+            ⬇ Xuất Excel
+          </button>
+        </div>
         <p className="admin-overview__hint">
-          Điểm mỗi cột = tổng điểm đã ghi nhận trong trò đó. <strong>Tổng 3 trò</strong> = cộng 3
-          cột. Cột <strong>Điểm xanh (hồ sơ)</strong> là số trên tài khoản.
+          Điểm mỗi cột = tổng điểm đã ghi nhận trong trò đó. <strong>Tổng 3 trò</strong> = Phân loại
+          + Quiz + Vòng quay.
           {canEdit && (
             <>
               {' '}
@@ -174,7 +189,6 @@ export function AdminOverviewPanel({
                 <th title="Quiz">🧠 Quiz</th>
                 <th title="Vòng quay">🎡 Vòng quay</th>
                 <th>Tổng 3 trò</th>
-                <th>Điểm xanh</th>
                 {canEdit && <th style={{ minWidth: 110 }}>Thao tác</th>}
               </tr>
             </thead>
@@ -182,7 +196,7 @@ export function AdminOverviewPanel({
               {playerScores.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={canEdit ? 8 : 7}
+                    colSpan={canEdit ? 7 : 6}
                     style={{ textAlign: 'center', color: 'var(--gray-500)' }}
                   >
                     Chưa có học sinh trong phạm vi xem
@@ -212,7 +226,6 @@ export function AdminOverviewPanel({
                     <td className="admin-overview__num admin-overview__num--total">
                       {row.totalPoints}
                     </td>
-                    <td className="admin-overview__num">⭐ {row.greenPoints}</td>
                     {canEdit && (
                       <td>
                         <div className="admin-overview__actions">
