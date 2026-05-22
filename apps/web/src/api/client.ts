@@ -230,7 +230,9 @@ export const adminApi = {
       body: JSON.stringify(data),
     }),
   deleteUser: (id: string) =>
-    api<{ ok: boolean }>(`/admin/users/${id}`, { method: 'DELETE' }),
+    api<{ ok: boolean; classesRemoved?: number }>(`/admin/users/${id}`, {
+      method: 'DELETE',
+    }),
   resetUserPassword: (id: string) =>
     api<{ ok: boolean; defaultPassword: string }>(
       `/admin/users/${id}/reset-password`,

@@ -13,6 +13,8 @@ interface UserAdminPanelProps {
   actorRole: Role;
   onMessage: (msg: string) => void;
   onChanged: () => void;
+  /** Tăng khi dữ liệu admin đổi (xóa HS, import…) để tải lại danh sách lớp */
+  dataVersion?: number;
 }
 
 const ROLE_OPTIONS: { value: Role; label: string; hint: string }[] = [
@@ -22,7 +24,13 @@ const ROLE_OPTIONS: { value: Role; label: string; hint: string }[] = [
   { value: 'SUPER_ADMIN', label: 'Super Admin', hint: 'Toàn hệ thống' },
 ];
 
-export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserAdminPanelProps) {
+export function UserAdminPanel({
+  users,
+  actorRole,
+  onMessage,
+  onChanged,
+  dataVersion = 0,
+}: UserAdminPanelProps) {
   const [classes, setClasses] = useState<AdminClass[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -32,12 +40,16 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
   const inputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  useEffect(() => {
+  const loadClasses = () => {
     adminApi
       .classes()
       .then((list) => setClasses(list as AdminClass[]))
       .catch(() => setClasses([]));
-  }, []);
+  };
+
+  useEffect(() => {
+    loadClasses();
+  }, [dataVersion]);
 
   const allowedRoles = ROLE_OPTIONS.filter((r) => {
     if (actorRole === 'TEACHER') return r.value === 'STUDENT';
@@ -86,10 +98,7 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
       setFormError('');
       onMessage(`Đã tạo tài khoản ${email}`);
       onChanged();
-      adminApi
-        .classes()
-        .then((list) => setClasses(list as AdminClass[]))
-        .catch(() => setClasses([]));
+      loadClasses();
     } catch (err) {
       const text = err instanceof Error ? err.message : 'Không tạo được';
       setFormError(text);
@@ -115,10 +124,7 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
           (res.classesRemoved ? `, ${res.classesRemoved} lớp trống đã xóa` : '') +
           (res.failed ? ` — ${res.failed} lỗi${errLines ? `: ${errLines}` : ''}` : ''),
       );
-      adminApi
-        .classes()
-        .then((list) => setClasses(list as AdminClass[]))
-        .catch(() => setClasses([]));
+      loadClasses();
       onChanged();
     } catch (e) {
       setExcelError(e instanceof Error ? e.message : 'Không đọc được file');

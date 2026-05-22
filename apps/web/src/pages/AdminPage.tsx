@@ -50,6 +50,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<'overview' | 'users' | 'trash' | 'quiz' | 'wheel'>('overview');
   const [resetUser, setResetUser] = useState<AdminUser | null>(null);
   const [resettingPw, setResettingPw] = useState(false);
+  const [dataVersion, setDataVersion] = useState(0);
   const [msg, setMsg] = useState('');
   const [quizConfig, setQuizConfig] = useState<QuizConfig | null>(null);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
@@ -72,6 +73,7 @@ export default function AdminPage() {
     ]);
     setDash(d);
     setUsers(u);
+    setDataVersion((v) => v + 1);
     if (canManageTrash) {
       const t = (await adminApi.trashItems()) as TrashRow[];
       setTrash(t);
@@ -228,6 +230,7 @@ export default function AdminPage() {
             <UserAdminPanel
               users={users}
               actorRole={user.role}
+              dataVersion={dataVersion}
               onMessage={setMsg}
               onChanged={load}
             />

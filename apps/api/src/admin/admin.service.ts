@@ -111,6 +111,8 @@ export class AdminService {
   }
 
   async dashboard(user: JwtPayload) {
+    await this.pruneEmptyClasses(user);
+
     const orgFilter =
       user.role === 'SUPER_ADMIN' && !user.organizationId
         ? {}
@@ -137,7 +139,9 @@ export class AdminService {
       recentSessions,
     ] = await Promise.all([
       this.prisma.user.count({ where: studentWhere }),
-      this.prisma.class.count({ where: orgFilter }),
+      this.prisma.class.count({
+        where: { ...orgFilter, students: { some: {} } },
+      }),
       this.prisma.gameSession.count({
         where: { ...inUsers, finishedAt: { not: null } },
       }),
@@ -283,8 +287,63 @@ export class AdminService {
     return this.prisma.organization.findMany({ orderBy: { name: 'asc' } });
   }
 
+  /** Xóa lớp không còn học sinh (sau khi admin xóa HS hoặc import Excel). */
+  private async pruneEmptyClasses(user: JwtPayload): Promise<number> {
+    if (user.role === 'TEACHER') {
+      const orgId = user.organizationId;
+      if (!orgId) return 0;
+      return this.pruneEmptyClassesInOrg(user, orgId);
+    }
+
+    if (user.role === 'ORG_ADMIN' && user.organizationId) {
+      return this.pruneEmptyClassesInOrg(user, user.organizationId);
+    }
+
+    if (user.role === 'SUPER_ADMIN') {
+      const orgs = await this.prisma.organization.findMany({
+        select: { id: true },
+      });
+      let total = 0;
+      for (const org of orgs) {
+        total += await this.pruneEmptyClassesInOrg(user, org.id);
+      }
+      return total;
+    }
+
+    return 0;
+  }
+
+  private async pruneEmptyClassesInOrg(
+    user: JwtPayload,
+    orgId: string,
+  ): Promise<number> {
+    const where: {
+      organizationId: string;
+      students: { none: Record<string, never> };
+      teacherId?: string;
+    } = {
+      organizationId: orgId,
+      students: { none: {} },
+    };
+    if (user.role === 'TEACHER') {
+      where.teacherId = user.sub;
+    }
+
+    const emptyClasses = await this.prisma.class.findMany({
+      where,
+      select: { id: true },
+    });
+
+    for (const cls of emptyClasses) {
+      await this.prisma.class.delete({ where: { id: cls.id } });
+    }
+    return emptyClasses.length;
+  }
+
   async listClasses(user: JwtPayload) {
-    const where =
+    await this.pruneEmptyClasses(user);
+
+    const scope =
       user.role === 'SUPER_ADMIN'
         ? {}
         : user.role === 'TEACHER'
@@ -292,7 +351,10 @@ export class AdminService {
           : { organizationId: user.organizationId! };
 
     return this.prisma.class.findMany({
-      where,
+      where: {
+        ...scope,
+        students: { some: {} },
+      },
       include: {
         teacher: { select: { id: true, fullName: true } },
         _count: { select: { students: true } },
@@ -598,8 +660,13 @@ export class AdminService {
       this.prisma.user.delete({ where: { id } }),
     ]);
 
-    await this.log(user, 'DELETE_USER', id, { email: target.email });
-    return { ok: true };
+    const classesRemoved = await this.pruneEmptyClasses(user);
+
+    await this.log(user, 'DELETE_USER', id, {
+      email: target.email,
+      classesRemoved,
+    });
+    return { ok: true, classesRemoved };
   }
 
   async importUsers(
@@ -722,19 +789,7 @@ export class AdminService {
         }
       }
 
-      const emptyClasses = await this.prisma.class.findMany({
-        where: {
-          organizationId: orgId,
-          students: { none: {} },
-          ...(user.role === 'TEACHER' ? { teacherId: user.sub } : {}),
-        },
-        select: { id: true, name: true },
-      });
-
-      for (const cls of emptyClasses) {
-        await this.prisma.class.delete({ where: { id: cls.id } });
-        classesRemoved++;
-      }
+      classesRemoved = await this.pruneEmptyClassesInOrg(user, orgId);
     }
 
     await this.log(user, 'IMPORT_USERS', undefined, {

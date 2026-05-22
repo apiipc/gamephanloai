@@ -124,8 +124,11 @@ export function AdminOverviewPanel({
     if (!deleteRow) return;
     setDeleting(true);
     try {
-      await adminApi.deleteUser(deleteRow.id);
-      notify(`Đã xóa tài khoản ${deleteRow.fullName}`);
+      const res = await adminApi.deleteUser(deleteRow.id);
+      notify(
+        `Đã xóa tài khoản ${deleteRow.fullName}` +
+          (res.classesRemoved ? ` (${res.classesRemoved} lớp trống đã gỡ)` : ''),
+      );
       setDeleteRow(null);
       onDataChanged?.();
     } catch (err) {
