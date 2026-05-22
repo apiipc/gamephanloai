@@ -55,7 +55,7 @@ class CreateUserDto {
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
-  @IsEmail({}, { allow_utf8_local_part: true })
+  @IsEmail()
   email!: string;
 
   @IsString()
