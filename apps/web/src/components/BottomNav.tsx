@@ -5,7 +5,7 @@ export function BottomNav() {
   const { isAdmin } = useAuth();
 
   return (
-    <nav className="bottom-nav">
+    <nav className={`bottom-nav${isAdmin ? ' bottom-nav--admin' : ''}`}>
       <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
         <span>🏠</span>
         <span>Trang chủ</span>

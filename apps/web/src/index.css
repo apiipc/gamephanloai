@@ -52,10 +52,18 @@ input, select {
   max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: #fff;
   box-shadow: var(--shadow);
+}
+
+/* Trang có bottom nav: cuộn trong .page, nav cố định dưới shell */
+.app-shell:not(.app-shell--game) {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
 }
 
 /* Nền full màn hình 16:9 khi chơi game */
@@ -472,9 +480,17 @@ input, select {
 }
 
 .page {
-  flex: 1;
   padding: 20px;
-  padding-bottom: 90px;
+}
+
+.app-shell:not(.app-shell--game) .page {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-bottom: 24px;
 }
 
 .btn {
@@ -1526,18 +1542,32 @@ input, select {
 }
 
 .bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  flex-shrink: 0;
   width: 100%;
   max-width: 480px;
+  margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   background: #fff;
   border-top: 1px solid var(--gray-200);
-  padding: 8px 0 12px;
+  padding: 8px 0 calc(12px + env(safe-area-inset-bottom, 0px));
   z-index: 50;
+}
+
+.bottom-nav--admin {
+  grid-template-columns: repeat(3, 1fr);
+  row-gap: 2px;
+  padding-top: 6px;
+}
+
+.bottom-nav--admin .nav-item {
+  font-size: 9px;
+  padding: 2px 4px;
+}
+
+.bottom-nav--admin .nav-item span:first-child {
+  font-size: 20px;
 }
 
 .nav-item {
@@ -2858,6 +2888,12 @@ th {
 
 .leaderboard-table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.leaderboard-class-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .leaderboard-table {

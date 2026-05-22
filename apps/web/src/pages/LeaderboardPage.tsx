@@ -153,8 +153,8 @@ export default function LeaderboardPage() {
         {isAdmin && classRanks.length > 0 && (
           <>
             <h3 style={{ fontSize: 16, marginBottom: 12 }}>Xếp hạng lớp (trường)</h3>
-            <div className="card">
-              <table>
+            <div className="card leaderboard-class-table-wrap">
+              <table className="leaderboard-table">
                 <thead>
                   <tr>
                     <th>#</th>
