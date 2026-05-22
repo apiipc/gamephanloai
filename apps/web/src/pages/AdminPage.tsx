@@ -13,6 +13,7 @@ import { AdminOverviewPanel } from '../components/AdminOverviewPanel';
 import { TeacherClassManagePanel } from '../components/TeacherClassManagePanel';
 import { ClassTeacherAssignPanel } from '../components/ClassTeacherAssignPanel';
 import type { PlayerScoreRow } from '../components/AdminOverviewPanel';
+import { userClassLabel } from '../lib/userClassLabel';
 
 interface Dashboard {
   userCount: number;
@@ -34,6 +35,8 @@ interface AdminUser {
   role: Role;
   greenPoints: number;
   class?: { name: string } | null;
+  teachingClasses?: { name: string }[];
+  homeroomClassNames?: string | null;
 }
 
 interface TrashRow {
@@ -286,7 +289,7 @@ export default function AdminPage() {
                   <th>Họ tên</th>
                   <th>Email</th>
                   <th>Vai trò</th>
-                  <th>Lớp</th>
+                  <th>Lớp / GVCN</th>
                   <th>Điểm</th>
                   {canCreateUser && <th>Thao tác</th>}
                 </tr>
@@ -297,7 +300,7 @@ export default function AdminPage() {
                     <td>{u.fullName}</td>
                     <td>{u.email}</td>
                     <td>{roleBadge(u.role)}</td>
-                    <td>{u.class?.name ?? '—'}</td>
+                    <td>{userClassLabel(u)}</td>
                     <td>{u.greenPoints}</td>
                     {canCreateUser && (
                       <td>

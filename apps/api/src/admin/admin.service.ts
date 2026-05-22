@@ -226,6 +226,10 @@ export class AdminService {
               role: true,
               greenPoints: true,
               class: { select: { name: true } },
+              teachingClasses: {
+                select: { name: true },
+                orderBy: { name: 'asc' },
+              },
             },
             orderBy: { fullName: 'asc' },
           })
@@ -290,6 +294,7 @@ export class AdminService {
       role: Role;
       greenPoints: number;
       class: { name: string } | null;
+      teachingClasses?: { name: string }[];
     }) => {
       const sort = sortMap.get(u.id) ?? { points: 0, plays: 0 };
       const quiz = quizMap.get(u.id) ?? { points: 0, plays: 0 };
@@ -300,7 +305,11 @@ export class AdminService {
         fullName: u.fullName,
         email: u.email,
         role: u.role,
-        className: u.class?.name ?? null,
+        className: this.homeroomClassNames(
+          u.role,
+          u.class,
+          u.teachingClasses ?? [],
+        ),
         greenPoints: u.greenPoints,
         sortPoints: sort.points,
         sortPlays: sort.plays,
@@ -452,19 +461,34 @@ export class AdminService {
     });
   }
 
+  private homeroomClassNames(
+    role: Role,
+    studentClass: { name: string } | null | undefined,
+    teachingClasses: { name: string }[],
+  ): string | null {
+    if (role === Role.TEACHER) {
+      const names = teachingClasses.map((c) => c.name);
+      return names.length ? names.join(', ') : null;
+    }
+    return studentClass?.name ?? null;
+  }
+
   async listUsers(user: JwtPayload) {
+    const userSelect = {
+      id: true,
+      email: true,
+      fullName: true,
+      role: true,
+      greenPoints: true,
+      class: { select: { name: true } },
+      teachingClasses: { select: { name: true }, orderBy: { name: 'asc' as const } },
+    };
+
     if (user.role === 'TEACHER') {
       const classIds = await getTeacherManagedClassIds(this.prisma, user);
       return this.prisma.user.findMany({
         where: { classId: { in: classIds.length ? classIds : ['__none__'] } },
-        select: {
-          id: true,
-          email: true,
-          fullName: true,
-          role: true,
-          greenPoints: true,
-          class: { select: { name: true } },
-        },
+        select: userSelect,
       });
     }
 
@@ -473,18 +497,20 @@ export class AdminService {
         ? {}
         : { organizationId: user.organizationId! };
 
-    return this.prisma.user.findMany({
+    const rows = await this.prisma.user.findMany({
       where,
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        role: true,
-        greenPoints: true,
-        class: { select: { name: true } },
-      },
+      select: userSelect,
       orderBy: { fullName: 'asc' },
     });
+
+    return rows.map((u) => ({
+      ...u,
+      homeroomClassNames: this.homeroomClassNames(
+        u.role,
+        u.class,
+        u.teachingClasses,
+      ),
+    }));
   }
 
   /** Học sinh: nhập tên lớp — tìm trong org hoặc tạo mới (GV chỉ được lớp đã gán). */

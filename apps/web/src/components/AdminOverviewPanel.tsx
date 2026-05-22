@@ -274,7 +274,13 @@ export function AdminOverviewPanel({
                         {ROLE_LABELS[row.role]}
                       </span>
                     </td>
-                    <td>{row.className ?? '—'}</td>
+                    <td>
+                      {row.className
+                        ? row.role === 'TEACHER'
+                          ? `${row.className} (GVCN)`
+                          : row.className
+                        : '—'}
+                    </td>
                     <td className="admin-overview__num">
                       {row.sortPoints}
                       <span className="admin-overview__sub">{row.sortPlays} lượt</span>
