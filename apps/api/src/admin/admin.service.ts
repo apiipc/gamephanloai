@@ -128,6 +128,27 @@ export class AdminService {
     };
   }
 
+  /** HS + GV (nếu quản trị) — dùng cho bảng điểm tổng quan. */
+  private async dashboardPlayerScope(user: JwtPayload) {
+    const { studentWhere, userIds: studentIds } = await this.studentScope(user);
+
+    let teacherIds: string[] = [];
+    if (user.role === 'ORG_ADMIN' || user.role === 'SUPER_ADMIN') {
+      const orgFilter =
+        user.role === 'SUPER_ADMIN' && !user.organizationId
+          ? {}
+          : { organizationId: user.organizationId! };
+      const teachers = await this.prisma.user.findMany({
+        where: { ...orgFilter, role: Role.TEACHER },
+        select: { id: true },
+      });
+      teacherIds = teachers.map((t) => t.id);
+    }
+
+    const playerIds = [...new Set([...studentIds, ...teacherIds])];
+    return { studentWhere, studentIds, teacherIds, playerIds };
+  }
+
   async dashboard(user: JwtPayload) {
     await this.pruneEmptyClasses(user);
 
@@ -138,11 +159,13 @@ export class AdminService {
           ? { organizationId: user.organizationId }
           : {};
 
-    const { studentWhere, userIds } = await this.studentScope(user);
-    const inUsers = { userId: { in: userIds.length ? userIds : [] } };
+    const { studentWhere, teacherIds, playerIds } =
+      await this.dashboardPlayerScope(user);
+    const inUsers = { userId: { in: playerIds.length ? playerIds : [] } };
 
     const [
       userCount,
+      teacherCount,
       classCount,
       sortPlays,
       quizPlays,
@@ -151,12 +174,14 @@ export class AdminService {
       quizAgg,
       wheelAgg,
       students,
+      teachers,
       sortByUser,
       quizByUser,
       wheelByUser,
       recentSessions,
     ] = await Promise.all([
       this.prisma.user.count({ where: studentWhere }),
+      Promise.resolve(teacherIds.length),
       this.prisma.class.count({
         where: { ...orgFilter, students: { some: {} } },
       }),
@@ -185,31 +210,46 @@ export class AdminService {
           id: true,
           fullName: true,
           email: true,
+          role: true,
           greenPoints: true,
           class: { select: { name: true } },
         },
         orderBy: { fullName: 'asc' },
       }),
-      userIds.length
+      teacherIds.length
+        ? this.prisma.user.findMany({
+            where: { id: { in: teacherIds } },
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              role: true,
+              greenPoints: true,
+              class: { select: { name: true } },
+            },
+            orderBy: { fullName: 'asc' },
+          })
+        : Promise.resolve([]),
+      playerIds.length
         ? this.prisma.gameSession.groupBy({
             by: ['userId'],
-            where: { userId: { in: userIds }, finishedAt: { not: null } },
+            where: { userId: { in: playerIds }, finishedAt: { not: null } },
             _sum: { score: true },
             _count: true,
           })
         : Promise.resolve([]),
-      userIds.length
+      playerIds.length
         ? this.prisma.quizSession.groupBy({
             by: ['userId'],
-            where: { userId: { in: userIds }, finishedAt: { not: null } },
+            where: { userId: { in: playerIds }, finishedAt: { not: null } },
             _sum: { score: true },
             _count: true,
           })
         : Promise.resolve([]),
-      userIds.length
+      playerIds.length
         ? this.prisma.wheelSpinLog.groupBy({
             by: ['userId'],
-            where: { userId: { in: userIds }, prizeType: 'POINTS' },
+            where: { userId: { in: playerIds }, prizeType: 'POINTS' },
             _sum: { value: true },
             _count: true,
           })
@@ -243,18 +283,25 @@ export class AdminService {
       ]),
     );
 
-    const playerScores = students
-      .map((s) => {
-      const sort = sortMap.get(s.id) ?? { points: 0, plays: 0 };
-      const quiz = quizMap.get(s.id) ?? { points: 0, plays: 0 };
-      const wheel = wheelMap.get(s.id) ?? { points: 0, spins: 0 };
+    const mapPlayer = (u: {
+      id: string;
+      fullName: string;
+      email: string;
+      role: Role;
+      greenPoints: number;
+      class: { name: string } | null;
+    }) => {
+      const sort = sortMap.get(u.id) ?? { points: 0, plays: 0 };
+      const quiz = quizMap.get(u.id) ?? { points: 0, plays: 0 };
+      const wheel = wheelMap.get(u.id) ?? { points: 0, spins: 0 };
       const totalPoints = sort.points + quiz.points + wheel.points;
       return {
-        id: s.id,
-        fullName: s.fullName,
-        email: s.email,
-        className: s.class?.name ?? null,
-        greenPoints: s.greenPoints,
+        id: u.id,
+        fullName: u.fullName,
+        email: u.email,
+        role: u.role,
+        className: u.class?.name ?? null,
+        greenPoints: u.greenPoints,
         sortPoints: sort.points,
         sortPlays: sort.plays,
         quizPoints: quiz.points,
@@ -263,11 +310,15 @@ export class AdminService {
         wheelSpins: wheel.spins,
         totalPoints,
       };
-    })
+    };
+
+    const playerScores = [...students, ...teachers]
+      .map(mapPlayer)
       .sort((a, b) => b.totalPoints - a.totalPoints);
 
     return {
       userCount,
+      teacherCount,
       sessionCount: sortPlays + quizPlays + wheelSpins,
       classCount,
       recentSessions,

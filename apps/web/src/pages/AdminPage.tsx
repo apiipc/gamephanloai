@@ -16,6 +16,7 @@ import type { PlayerScoreRow } from '../components/AdminOverviewPanel';
 
 interface Dashboard {
   userCount: number;
+  teacherCount?: number;
   sessionCount: number;
   classCount: number;
   games?: {
@@ -233,6 +234,8 @@ export default function AdminPage() {
       {tab === 'overview' && !isTeacher && dash && dash.games && dash.playerScores && (
         <AdminOverviewPanel
           userCount={dash.userCount}
+          teacherCount={dash.teacherCount ?? 0}
+          actorRole={user!.role}
           classCount={dash.classCount}
           sessionCount={dash.sessionCount}
           games={dash.games}

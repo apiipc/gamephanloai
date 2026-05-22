@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { downloadPlayerScoresExcel } from '../admin/playerScoresExcel';
 import { adminApi } from '../api/client';
+import type { Role } from '../types';
 
 export interface GameScoreSummary {
   name: string;
@@ -13,6 +14,7 @@ export interface PlayerScoreRow {
   id: string;
   fullName: string;
   email: string;
+  role: Role;
   className: string | null;
   sortPoints: number;
   sortPlays: number;
@@ -25,6 +27,8 @@ export interface PlayerScoreRow {
 
 interface AdminOverviewPanelProps {
   userCount: number;
+  teacherCount?: number;
+  actorRole: Role;
   classCount: number;
   sessionCount: number;
   games: {
@@ -37,8 +41,17 @@ interface AdminOverviewPanelProps {
   onDataChanged?: () => void;
 }
 
+const ROLE_LABELS: Record<Role, string> = {
+  STUDENT: 'HS',
+  TEACHER: 'GV',
+  ORG_ADMIN: 'Admin',
+  SUPER_ADMIN: 'Super',
+};
+
 export function AdminOverviewPanel({
   userCount,
+  teacherCount = 0,
+  actorRole,
   classCount,
   sessionCount,
   games,
@@ -59,6 +72,14 @@ export function AdminOverviewPanel({
 
   const canEdit = Boolean(onDataChanged);
 
+  const canManageRow = (targetRole: Role) => {
+    if (targetRole === 'STUDENT') return canEdit;
+    if (targetRole === 'TEACHER') {
+      return canEdit && (actorRole === 'ORG_ADMIN' || actorRole === 'SUPER_ADMIN');
+    }
+    return false;
+  };
+
   const notify = (msg: string) => {
     onMessage?.(msg);
   };
@@ -72,19 +93,21 @@ export function AdminOverviewPanel({
     const email = String(fd.get('email') ?? '').trim().toLowerCase();
     const className = String(fd.get('className') ?? '').trim();
     const password = String(fd.get('password') ?? '');
+    const isStudent = editRow.role === 'STUDENT';
 
     if (!fullName || !email) {
       setFormError('Họ tên và email là bắt buộc');
       return;
     }
-    if (!className) {
+    if (isStudent && !className) {
       setFormError('Vui lòng nhập lớp');
       return;
     }
 
     setSaving(true);
     try {
-      const body: Record<string, string> = { fullName, email, className };
+      const body: Record<string, string> = { fullName, email };
+      if (isStudent) body.className = className;
       if (password.length > 0) {
         if (password.length < 6) {
           setFormError('Mật khẩu tối thiểu 6 ký tự');
@@ -94,7 +117,11 @@ export function AdminOverviewPanel({
         body.password = password;
       }
       await adminApi.updateUser(editRow.id, body);
-      notify('Đã cập nhật tài khoản học sinh');
+      notify(
+        editRow.role === 'TEACHER'
+          ? 'Đã cập nhật tài khoản giáo viên'
+          : 'Đã cập nhật tài khoản học sinh',
+      );
       setEditRow(null);
       onDataChanged?.();
     } catch (err) {
@@ -145,6 +172,12 @@ export function AdminOverviewPanel({
           <h3>Học sinh</h3>
           <p>{userCount}</p>
         </div>
+        {(actorRole === 'ORG_ADMIN' || actorRole === 'SUPER_ADMIN') && (
+          <div className="stat-card">
+            <h3>Giáo viên</h3>
+            <p>{teacherCount}</p>
+          </div>
+        )}
         <div className="stat-card">
           <h3>Lượt chơi (3 game)</h3>
           <p>{sessionCount}</p>
@@ -183,7 +216,7 @@ export function AdminOverviewPanel({
             disabled={playerScores.length === 0}
             onClick={() => {
               downloadPlayerScoresExcel(playerScores);
-              notify(`Đã tải Excel (${playerScores.length} học sinh)`);
+              notify(`Đã tải Excel (${playerScores.length} người chơi)`);
             }}
           >
             ⬇ Xuất Excel
@@ -195,8 +228,8 @@ export function AdminOverviewPanel({
           {canEdit && (
             <>
               {' '}
-              Dùng <strong>Sửa</strong>, <strong>Reset MK</strong> (về mật khẩu mặc định) hoặc{' '}
-              <strong>Xóa</strong> để quản lý tài khoản học sinh trong phạm vi của bạn.
+              Dùng <strong>Sửa</strong>, <strong>Reset MK</strong> hoặc <strong>Xóa</strong> cho học
+              sinh và giáo viên (GV cũng có điểm khi tự chơi).
             </>
           )}
         </p>
@@ -204,7 +237,8 @@ export function AdminOverviewPanel({
           <table className="wheel-admin__table admin-overview__table">
             <thead>
               <tr>
-                <th>Học sinh</th>
+                <th>Người chơi</th>
+                <th>Vai trò</th>
                 <th>Lớp</th>
                 <th title="Phân loại siêu tốc">♻️ Phân loại</th>
                 <th title="Quiz">🧠 Quiz</th>
@@ -217,10 +251,10 @@ export function AdminOverviewPanel({
               {playerScores.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={canEdit ? 7 : 6}
+                    colSpan={canEdit ? 8 : 7}
                     style={{ textAlign: 'center', color: 'var(--gray-500)' }}
                   >
-                    Chưa có học sinh trong phạm vi xem
+                    Chưa có người chơi trong phạm vi xem
                   </td>
                 </tr>
               ) : (
@@ -230,6 +264,15 @@ export function AdminOverviewPanel({
                       <strong>{row.fullName}</strong>
                       <br />
                       <span className="admin-overview__email">{row.email}</span>
+                    </td>
+                    <td>
+                      <span
+                        className={`badge ${
+                          row.role === 'TEACHER' ? 'badge-teacher' : 'badge-student'
+                        }`}
+                      >
+                        {ROLE_LABELS[row.role]}
+                      </span>
                     </td>
                     <td>{row.className ?? '—'}</td>
                     <td className="admin-overview__num">
@@ -249,32 +292,36 @@ export function AdminOverviewPanel({
                     </td>
                     {canEdit && (
                       <td>
-                        <div className="admin-overview__actions">
-                          <button
-                            type="button"
-                            className="btn btn-secondary wheel-admin__btn-sm"
-                            onClick={() => {
-                              setFormError('');
-                              setEditRow(row);
-                            }}
-                          >
-                            Sửa
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-secondary wheel-admin__btn-sm"
-                            onClick={() => setResetRow(row)}
-                          >
-                            Reset MK
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-secondary wheel-admin__btn-sm trash-catalog__btn--danger"
-                            onClick={() => setDeleteRow(row)}
-                          >
-                            Xóa
-                          </button>
-                        </div>
+                        {canManageRow(row.role) ? (
+                          <div className="admin-overview__actions">
+                            <button
+                              type="button"
+                              className="btn btn-secondary wheel-admin__btn-sm"
+                              onClick={() => {
+                                setFormError('');
+                                setEditRow(row);
+                              }}
+                            >
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary wheel-admin__btn-sm"
+                              onClick={() => setResetRow(row)}
+                            >
+                              Reset MK
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary wheel-admin__btn-sm trash-catalog__btn--danger"
+                              onClick={() => setDeleteRow(row)}
+                            >
+                              Xóa
+                            </button>
+                          </div>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                     )}
                   </tr>
@@ -301,11 +348,12 @@ export function AdminOverviewPanel({
             onClick={(ev) => ev.stopPropagation()}
           >
             <h3 id="admin-edit-student-title" style={{ marginTop: 0 }}>
-              Sửa học sinh
+              {editRow.role === 'TEACHER' ? 'Sửa giáo viên' : 'Sửa học sinh'}
             </h3>
             <p style={{ fontSize: 14, color: 'var(--gray-600)' }}>
-              <strong>{editRow.fullName}</strong> — chỉnh họ tên, email, lớp hoặc đặt mật khẩu mới
-              (để trống nếu giữ nguyên).
+              <strong>{editRow.fullName}</strong> — chỉnh họ tên, email
+              {editRow.role === 'STUDENT' ? ', lớp' : ''} hoặc mật khẩu mới (để trống nếu giữ
+              nguyên).
             </p>
             <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <label className="user-admin__field" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -322,10 +370,20 @@ export function AdminOverviewPanel({
                   autoComplete="email"
                 />
               </label>
-              <label className="user-admin__field" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span>Lớp *</span>
-                <input name="className" required defaultValue={editRow.className ?? ''} placeholder="VD: 6A1" />
-              </label>
+              {editRow.role === 'STUDENT' && (
+                <label
+                  className="user-admin__field"
+                  style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
+                >
+                  <span>Lớp *</span>
+                  <input
+                    name="className"
+                    required
+                    defaultValue={editRow.className ?? ''}
+                    placeholder="VD: 6A1"
+                  />
+                </label>
+              )}
               <label className="user-admin__field" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <span>Mật khẩu mới</span>
                 <input
@@ -375,7 +433,7 @@ export function AdminOverviewPanel({
             </h3>
             <p style={{ fontSize: 14, color: 'var(--gray-700)' }}>
               Đặt lại mật khẩu của <strong>{resetRow.fullName}</strong> ({resetRow.email}) về mật
-              khẩu mặc định của hệ thống. Học sinh có thể đăng nhập và đổi MK tại Hồ sơ.
+              khẩu mặc định của hệ thống. Người dùng có thể đăng nhập và đổi MK tại Hồ sơ.
             </p>
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
               <button

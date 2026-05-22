@@ -1,9 +1,17 @@
 import * as XLSX from 'xlsx';
 import type { PlayerScoreRow } from '../components/AdminOverviewPanel';
 
+const ROLE_EXPORT: Record<string, string> = {
+  STUDENT: 'HS',
+  TEACHER: 'GV',
+  ORG_ADMIN: 'Admin',
+  SUPER_ADMIN: 'Super',
+};
+
 const HEADERS = [
   'Họ tên',
   'Email',
+  'Vai trò',
   'Lớp',
   'Phân loại (điểm)',
   'Phân loại (lượt)',
@@ -18,6 +26,7 @@ function rowToCells(row: PlayerScoreRow): (string | number)[] {
   return [
     row.fullName,
     row.email,
+    ROLE_EXPORT[row.role] ?? row.role,
     row.className ?? '',
     row.sortPoints,
     row.sortPlays,
@@ -36,6 +45,7 @@ export function downloadPlayerScoresExcel(rows: PlayerScoreRow[]): void {
   ws['!cols'] = [
     { wch: 22 },
     { wch: 28 },
+    { wch: 8 },
     { wch: 8 },
     { wch: 14 },
     { wch: 14 },
