@@ -141,6 +141,16 @@ export default function AdminPage() {
     setTrashImagePreview(URL.createObjectURL(file));
   };
 
+  const canManageUserRow = (targetRole: Role) => {
+    if (!user) return false;
+    if (targetRole === 'STUDENT') return true;
+    if (targetRole === 'TEACHER') {
+      return user.role === 'ORG_ADMIN' || user.role === 'SUPER_ADMIN';
+    }
+    if (targetRole === 'ORG_ADMIN') return user.role === 'SUPER_ADMIN';
+    return false;
+  };
+
   const roleBadge = (role: Role) => {
     const cls =
       role === 'STUDENT'
@@ -272,7 +282,7 @@ export default function AdminPage() {
                     <td>{u.greenPoints}</td>
                     {canCreateUser && (
                       <td>
-                        {u.role === 'STUDENT' ? (
+                        {canManageUserRow(u.role) ? (
                           <div className="admin-overview__actions">
                             <button
                               type="button"

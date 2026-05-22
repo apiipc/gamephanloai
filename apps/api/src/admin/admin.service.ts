@@ -32,7 +32,8 @@ export class AdminService {
     }
   }
 
-  private async assertCanManageStudent(
+  /** Quyền sửa / reset MK / xóa tài khoản theo vai trò người thao tác. */
+  private async assertCanManageUser(
     actor: JwtPayload,
     target: {
       role: Role;
@@ -41,10 +42,10 @@ export class AdminService {
       class: { teacherId: string | null } | null;
     },
   ) {
-    if (target.role !== 'STUDENT') {
-      throw new BadRequestException('Chỉ có thể sửa hoặc xóa tài khoản học sinh');
-    }
     if (actor.role === 'TEACHER') {
+      if (target.role !== 'STUDENT') {
+        throw new BadRequestException('Giáo viên chỉ quản lý được học sinh');
+      }
       if (!actor.organizationId || target.organizationId !== actor.organizationId) {
         throw new ForbiddenException();
       }
@@ -52,20 +53,31 @@ export class AdminService {
       if (!target.classId || !classIds.includes(target.classId)) {
         throw new ForbiddenException('Học sinh không thuộc lớp bạn quản lý');
       }
-    } else if (actor.role === 'ORG_ADMIN') {
+      return;
+    }
+
+    if (actor.role === 'ORG_ADMIN') {
+      if (target.role === 'SUPER_ADMIN') {
+        throw new ForbiddenException();
+      }
       if (!actor.organizationId || target.organizationId !== actor.organizationId) {
         throw new ForbiddenException();
       }
-    } else if (actor.role === 'SUPER_ADMIN') {
+      return;
+    }
+
+    if (actor.role === 'SUPER_ADMIN') {
       if (
         actor.organizationId &&
+        target.organizationId &&
         target.organizationId !== actor.organizationId
       ) {
         throw new ForbiddenException();
       }
-    } else {
-      throw new ForbiddenException();
+      return;
     }
+
+    throw new ForbiddenException();
   }
 
   async log(user: JwtPayload, action: string, target?: string, metadata?: object) {
@@ -584,17 +596,18 @@ export class AdminService {
       include: { class: { select: { teacherId: true } } },
     });
     if (!target) throw new NotFoundException();
-    await this.assertCanManageStudent(user, target);
+    await this.assertCanManageUser(user, target);
 
     const wantsClassChange =
       (dto.className !== undefined && dto.className.trim() !== '') ||
       dto.classId !== undefined;
 
+    if (target.role !== 'STUDENT' && wantsClassChange) {
+      throw new BadRequestException('Chỉ học sinh mới đổi được lớp');
+    }
+
     let nextClassId = target.classId;
-    if (wantsClassChange) {
-      if (!target.organizationId) {
-        throw new BadRequestException('Học sinh chưa gắn tổ chức — không đổi lớp được');
-      }
+    if (wantsClassChange && target.organizationId) {
       nextClassId = await this.resolveClassForNewStudent(
         user,
         target.organizationId,
@@ -645,7 +658,7 @@ export class AdminService {
       include: { class: { select: { teacherId: true } } },
     });
     if (!target) throw new NotFoundException();
-    await this.assertCanManageStudent(user, target);
+    await this.assertCanManageUser(user, target);
 
     await this.prisma.user.update({
       where: { id },
@@ -667,7 +680,7 @@ export class AdminService {
       include: { class: { select: { teacherId: true } } },
     });
     if (!target) throw new NotFoundException();
-    await this.assertCanManageStudent(user, target);
+    await this.assertCanManageUser(user, target);
 
     const quizOwned = await this.prisma.quizQuestion.count({
       where: { createdById: id },
@@ -679,6 +692,10 @@ export class AdminService {
     }
 
     await this.prisma.$transaction([
+      this.prisma.class.updateMany({
+        where: { teacherId: id },
+        data: { teacherId: null },
+      }),
       this.prisma.auditLog.deleteMany({ where: { actorId: id } }),
       this.prisma.user.delete({ where: { id } }),
     ]);
