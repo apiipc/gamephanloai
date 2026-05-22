@@ -15,6 +15,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isAdmin: boolean;
 }
 
@@ -23,6 +24,21 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setUser(null);
+      return;
+    }
+    try {
+      const me = await authApi.me();
+      setUser(me);
+    } catch {
+      localStorage.removeItem('token');
+      setUser(null);
+    }
+  }, []);
 
   const loadUser = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -64,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user?.role === 'TEACHER';
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

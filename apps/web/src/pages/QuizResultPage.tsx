@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { GameViewport } from '../components/GameViewport';
 import { QUIZ_SCORING } from '../quiz/constants';
+import { useAuth } from '../context/AuthContext';
 import { playSound } from '../lib/sounds';
 
 interface QuizResultState {
@@ -16,6 +17,7 @@ interface QuizResultState {
 export default function QuizResultPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const data = state as QuizResultState | null;
 
   useEffect(() => {
@@ -24,7 +26,8 @@ export default function QuizResultPage() {
       return;
     }
     playSound('win');
-  }, [data, navigate]);
+    void refreshUser();
+  }, [data, navigate, refreshUser]);
 
   if (!data) return null;
 

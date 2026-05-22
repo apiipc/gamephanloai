@@ -2,6 +2,7 @@ import { GameViewport } from '../components/GameViewport';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { leaderboardApi } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import { playSound } from '../lib/sounds';
 
 interface ResultState {
@@ -14,6 +15,7 @@ interface ResultState {
 export default function ResultPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [rank, setRank] = useState<number | null>(null);
 
   const data = state as ResultState | null;
@@ -24,8 +26,9 @@ export default function ResultPage() {
       return;
     }
     playSound('win');
+    void refreshUser();
     leaderboardApi.myRank('sort').then((r) => setRank(r?.rank ?? null)).catch(() => {});
-  }, [data, navigate]);
+  }, [data, navigate, refreshUser]);
 
   if (!data) return null;
 

@@ -80,9 +80,15 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
         .map((x) => `Dòng ${x.row} (${x.email}): ${x.message}`)
         .join(' · ');
       onMessage(
-        `Import: ${res.created}/${res.total} thành công` +
+        `Import: ${res.created} mới, ${res.updated} cập nhật` +
+          (res.removed ? `, ${res.removed} HS đã xóa (không còn trong file)` : '') +
+          (res.classesRemoved ? `, ${res.classesRemoved} lớp trống đã xóa` : '') +
           (res.failed ? ` — ${res.failed} lỗi${errLines ? `: ${errLines}` : ''}` : ''),
       );
+      adminApi
+        .classes()
+        .then((list) => setClasses(list as AdminClass[]))
+        .catch(() => setClasses([]));
       onChanged();
     } catch (e) {
       setExcelError(e instanceof Error ? e.message : 'Không đọc được file');
@@ -153,8 +159,9 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
       <div className="card user-admin__block quiz-excel-upload">
         <h3 className="user-admin__title">📤 Nhập danh sách từ Excel</h3>
         <p className="user-admin__desc">
-          Tải file mẫu, điền nhiều dòng, rồi upload. Cột <strong>Vai trò</strong>: HS, GV hoặc
-          Admin.
+          Tải file mẫu, điền danh sách <strong>đầy đủ</strong> rồi upload. Học sinh có trong file
+          được tạo/cập nhật; HS <strong>không còn trong file</strong> sẽ bị xóa; lớp không còn HS
+          sẽ được gỡ. Cột <strong>Vai trò</strong>: HS, GV hoặc Admin.
         </p>
         <div className="quiz-excel-upload__actions">
           <button type="button" className="btn btn-secondary" onClick={() => downloadUserTemplate()}>

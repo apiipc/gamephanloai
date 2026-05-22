@@ -25,10 +25,10 @@ ENV="${RAILWAY_ENVIRONMENT:-production}"
 POSTGRES="${RAILWAY_POSTGRES_SERVICE:-Postgres}"
 SERVICE="${RAILWAY_SERVICE:-api}"
 
-APP_URL="${RAILWAY_APP_URL:-https://hocxanh.up.railway.app}"
+APP_URL="${RAILWAY_APP_URL:-https://greenschool.up.railway.app}"
 if [[ -z "$APP_URL" ]]; then
   echo "Thiếu RAILWAY_APP_URL (URL public của service sau Generate Domain), vd:"
-  echo "  export RAILWAY_APP_URL=\"https://hocxanh.up.railway.app\""
+  echo "  export RAILWAY_APP_URL=\"https://greenschool.up.railway.app\""
   exit 1
 fi
 

@@ -21,7 +21,7 @@ env:
   RAILWAY_PROJECT_ID: 1323cca9-cdce-4443-b158-f6f7c903a453
   RAILWAY_ENVIRONMENT: production
   RAILWAY_SERVICE: api
-  RAILWAY_APP_URL: https://hocxanh.up.railway.app
+  RAILWAY_APP_URL: https://greenschool.up.railway.app
 
 jobs:
   deploy:

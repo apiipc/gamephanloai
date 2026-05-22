@@ -4,7 +4,7 @@ Toàn bộ chạy trên **Railway** (PostgreSQL + **một** service: Nest phục
 
 Hướng dẫn chi tiết: **[RAILWAY.md](./RAILWAY.md)** · [docs.railway.com](https://docs.railway.com/)
 
-**Production:** https://hocxanh.up.railway.app · nghe thử âm thanh: `/sound-preview.html` · trong app: `/sounds`
+**Production:** https://greenschool.up.railway.app · nghe thử âm thanh: `/sound-preview.html` · trong app: `/sounds`
 
 **Nhanh — một lệnh trên máy** (có `RAILWAY_TOKEN` + `RAILWAY_APP_URL`): [`scripts/railway-provision.sh`](./scripts/railway-provision.sh) — **Root Directory trống** trên service app (xem [RAILWAY.md](./RAILWAY.md)).
 

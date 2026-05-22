@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { GameBackButton } from '../components/GameBackButton';
 import { GameViewport } from '../components/GameViewport';
 import { TrashItemView } from '../components/TrashItemView';
+import { useAuth } from '../context/AuthContext';
 import { gameApi } from '../api/client';
 import { playSound } from '../lib/sounds';
 import type { GameSession, TrashCategory, TrashItem } from '../types';
@@ -50,6 +52,7 @@ function hitTestBin(
 
 export default function GamePage() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [items, setItems] = useState<TrashItem[]>([]);
   const [session, setSession] = useState<GameSession | null>(null);
   const [current, setCurrent] = useState<TrashItem | null>(null);
@@ -96,6 +99,7 @@ export default function GamePage() {
     playSound('finish');
     try {
       const result = await gameApi.finish(sessionRef.current.id);
+      await refreshUser();
       navigate('/result', {
         state: {
           score: result.score,
@@ -107,7 +111,7 @@ export default function GamePage() {
     } catch {
       navigate('/play');
     }
-  }, [navigate]);
+  }, [navigate, refreshUser]);
 
   useEffect(() => {
     if (!session) return;
@@ -226,6 +230,7 @@ export default function GamePage() {
         style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 40px)' }}
       >
         <div className="game-hud">
+          <GameBackButton />
           <span className="game-hud-pill">⏱ {formatTime(timeLeft)}</span>
           <span className="game-hud-pill game-hud-pill--score">⭐ {session.score}</span>
         </div>

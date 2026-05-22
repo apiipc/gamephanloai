@@ -577,28 +577,53 @@ export class AdminService {
     }
 
     let created = 0;
+    let updated = 0;
     const errors: { row: number; email: string; message: string }[] = [];
+    const importedStudentEmails = new Set<string>();
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const rowNum = i + 2;
+      const email = row.email.trim().toLowerCase();
       try {
         if (row.role === 'STUDENT' && !row.className?.trim()) {
           throw new BadRequestException('Học sinh cần có cột Lớp');
         }
 
-        await this.createUser(user, {
-          email: row.email.trim().toLowerCase(),
-          password: row.password,
-          fullName: row.fullName.trim(),
-          role: row.role,
-          className: row.className?.trim() || undefined,
-          organizationId: orgId ?? undefined,
+        const existing = await this.prisma.user.findUnique({
+          where: { email },
         });
-        created++;
+
+        if (existing) {
+          if (existing.organizationId !== orgId) {
+            throw new BadRequestException('Email thuộc tổ chức khác');
+          }
+          await this.updateUser(user, existing.id, {
+            fullName: row.fullName.trim(),
+            email,
+            password: row.password?.length ? row.password : undefined,
+            className:
+              row.role === 'STUDENT' ? row.className?.trim() || undefined : undefined,
+          });
+          updated++;
+        } else {
+          await this.createUser(user, {
+            email,
+            password: row.password,
+            fullName: row.fullName.trim(),
+            role: row.role,
+            className: row.className?.trim() || undefined,
+            organizationId: orgId ?? undefined,
+          });
+          created++;
+        }
+
+        if (row.role === 'STUDENT') {
+          importedStudentEmails.add(email);
+        }
       } catch (e) {
         const message =
-          e instanceof Error ? e.message : 'Không tạo được tài khoản';
+          e instanceof Error ? e.message : 'Không xử lý được tài khoản';
         errors.push({
           row: rowNum,
           email: row.email,
@@ -607,13 +632,73 @@ export class AdminService {
       }
     }
 
+    let removed = 0;
+    let classesRemoved = 0;
+
+    if (importedStudentEmails.size > 0) {
+      const staleWhere: {
+        role: typeof Role.STUDENT;
+        organizationId: string;
+        email: { notIn: string[] };
+        class?: { teacherId: string };
+      } = {
+        role: Role.STUDENT,
+        organizationId: orgId,
+        email: { notIn: [...importedStudentEmails] },
+      };
+      if (user.role === 'TEACHER') {
+        staleWhere.class = { teacherId: user.sub };
+      }
+
+      const staleStudents = await this.prisma.user.findMany({
+        where: staleWhere,
+        select: { id: true, email: true },
+      });
+
+      for (const stale of staleStudents) {
+        try {
+          await this.deleteUser(user, stale.id);
+          removed++;
+        } catch (e) {
+          errors.push({
+            row: 0,
+            email: stale.email,
+            message:
+              e instanceof Error
+                ? `Không xóa HS cũ: ${e.message}`
+                : 'Không xóa HS cũ',
+          });
+        }
+      }
+
+      const emptyClasses = await this.prisma.class.findMany({
+        where: {
+          organizationId: orgId,
+          students: { none: {} },
+          ...(user.role === 'TEACHER' ? { teacherId: user.sub } : {}),
+        },
+        select: { id: true, name: true },
+      });
+
+      for (const cls of emptyClasses) {
+        await this.prisma.class.delete({ where: { id: cls.id } });
+        classesRemoved++;
+      }
+    }
+
     await this.log(user, 'IMPORT_USERS', undefined, {
       created,
+      updated,
+      removed,
+      classesRemoved,
       failed: errors.length,
     });
 
     return {
       created,
+      updated,
+      removed,
+      classesRemoved,
       failed: errors.length,
       total: rows.length,
       errors,

@@ -229,6 +229,9 @@ export const adminApi = {
   importUsers: (users: object[]) =>
     api<{
       created: number;
+      updated: number;
+      removed: number;
+      classesRemoved: number;
       failed: number;
       total: number;
       errors: { row: number; email: string; message: string }[];

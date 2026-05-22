@@ -8,7 +8,7 @@ Hướng dẫn cho repo **[gamephanloai](https://github.com/apiipc/gamephanloai)
 |--|--|
 | Tên | `game` |
 | **Project ID** | `1323cca9-cdce-4443-b158-f6f7c903a453` |
-| **URL production** | **https://hocxanh.up.railway.app** (game + API `/api/...`) |
+| **URL production** | **https://greenschool.up.railway.app** (game + API `/api/...`) |
 | File local | `.railway/project.json` |
 
 ---

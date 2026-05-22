@@ -1,9 +1,14 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { useAuth } from '../context/AuthContext';
 
 export default function HomePage() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, refreshUser } = useAuth();
+
+  useEffect(() => {
+    void refreshUser();
+  }, [refreshUser]);
 
   return (
     <div className="app-shell">

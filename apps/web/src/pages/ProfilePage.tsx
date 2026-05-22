@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { AudioVolumeControls } from '../components/AudioVolumeControls';
 import { SoundToggle } from '../components/SoundToggle';
+import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -12,7 +13,11 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+
+  useEffect(() => {
+    void refreshUser();
+  }, [refreshUser]);
 
   return (
     <div className="app-shell">

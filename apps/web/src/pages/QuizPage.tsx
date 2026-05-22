@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GameViewport } from '../components/GameViewport';
 import { quizApi } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import { playSound } from '../lib/sounds';
 import type { QuizPlayQuestion } from '../types';
 import {
@@ -14,6 +15,7 @@ import { sanitizeQuizQuestion } from '../quiz/sanitizeQuestion';
 
 export default function QuizPage() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [searchParams] = useSearchParams();
   const practice = searchParams.get('practice') === '1';
 
@@ -64,6 +66,7 @@ export default function QuizPage() {
     playSound('finish');
     try {
       const result = await quizApi.finish(sessionId);
+      await refreshUser();
       navigate('/quiz/result', {
         state: {
           score: result.score,
@@ -77,7 +80,7 @@ export default function QuizPage() {
     } catch {
       navigate('/quiz');
     }
-  }, [sessionId, navigate, maxCombo, practice]);
+  }, [sessionId, navigate, maxCombo, practice, refreshUser]);
 
   const goNext = useCallback(() => {
     setFeedback(null);

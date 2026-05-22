@@ -137,6 +137,20 @@ input, select {
   font-size: 16px;
 }
 
+.game-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--green-800);
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+}
+
 .game-hud {
   display: flex;
   align-items: center;
