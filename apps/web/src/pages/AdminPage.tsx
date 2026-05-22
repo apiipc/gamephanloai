@@ -11,6 +11,7 @@ import { WheelAdminPanel } from '../components/WheelAdminPanel';
 import { UserAdminPanel } from '../components/UserAdminPanel';
 import { AdminOverviewPanel } from '../components/AdminOverviewPanel';
 import { TeacherClassManagePanel } from '../components/TeacherClassManagePanel';
+import { ClassTeacherAssignPanel } from '../components/ClassTeacherAssignPanel';
 import type { PlayerScoreRow } from '../components/AdminOverviewPanel';
 
 interface Dashboard {
@@ -251,6 +252,16 @@ export default function AdminPage() {
       {tab === 'users' && (
         <>
           {isTeacher && <TeacherClassManagePanel />}
+          {(user?.role === 'ORG_ADMIN' || user?.role === 'SUPER_ADMIN') && (
+            <ClassTeacherAssignPanel
+              teachers={users
+                .filter((u) => u.role === 'TEACHER')
+                .map((u) => ({ id: u.id, fullName: u.fullName }))}
+              dataVersion={dataVersion}
+              onMessage={setMsg}
+              onChanged={() => load().catch(console.error)}
+            />
+          )}
           {canCreateUser && user && (
             <div style={{ marginTop: isTeacher ? 16 : 0 }}>
               <UserAdminPanel

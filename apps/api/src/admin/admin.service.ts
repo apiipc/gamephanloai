@@ -387,7 +387,11 @@ export class AdminService {
     return this.prisma.class.findMany({
       where: {
         ...scope,
-        ...(teacherOnly ? {} : { students: { some: {} } }),
+        ...(teacherOnly ||
+        user.role === 'ORG_ADMIN' ||
+        user.role === 'SUPER_ADMIN'
+          ? {}
+          : { students: { some: {} } }),
       },
       include: {
         teacher: { select: { id: true, fullName: true } },
