@@ -3,6 +3,7 @@ import { BottomNav } from '../components/BottomNav';
 import { AudioSettingsCard } from '../components/AudioSettingsCard';
 import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { usePlayerScores } from '../hooks/usePlayerScores';
 
 const ROLE_LABELS: Record<string, string> = {
   STUDENT: 'Học sinh',
@@ -13,6 +14,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function ProfilePage() {
   const { user, logout, refreshUser } = useAuth();
+  const scores = usePlayerScores();
 
   useEffect(() => {
     void refreshUser();
@@ -39,10 +41,15 @@ export default function ProfilePage() {
             </>
           )}
           <hr style={{ margin: '12px 0', border: 'none', borderTop: '1px solid var(--gray-100)' }} />
-          <p style={{ fontSize: 13, color: 'var(--gray-500)' }}>Điểm xanh</p>
+          <p style={{ fontSize: 13, color: 'var(--gray-500)' }}>Tổng điểm 3 trò chơi</p>
           <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--green-600)' }}>
-            ⭐ {user?.greenPoints ?? 0}
+            ⭐ {scores?.totalPoints ?? 0}
           </p>
+          {scores && user?.classId && (
+            <p style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 6 }}>
+              Phân loại {scores.sortPoints} · Quiz {scores.quizPoints} · Vòng quay {scores.wheelPoints}
+            </p>
+          )}
         </div>
         <AudioSettingsCard />
         <Link
