@@ -11,6 +11,7 @@ import { WheelAdminPanel } from '../components/WheelAdminPanel';
 import { UserAdminPanel } from '../components/UserAdminPanel';
 import { AdminOverviewPanel } from '../components/AdminOverviewPanel';
 import { TeacherClassesPanel } from '../components/TeacherClassesPanel';
+import { TeacherClassManagePanel } from '../components/TeacherClassManagePanel';
 import type { PlayerScoreRow } from '../components/AdminOverviewPanel';
 
 interface Dashboard {
@@ -48,7 +49,9 @@ export default function AdminPage() {
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [trash, setTrash] = useState<TrashRow[]>([]);
-  const [tab, setTab] = useState<'overview' | 'users' | 'trash' | 'quiz' | 'wheel'>('overview');
+  const [tab, setTab] = useState<
+    'overview' | 'classes' | 'users' | 'trash' | 'quiz' | 'wheel'
+  >('overview');
   const [resetUser, setResetUser] = useState<AdminUser | null>(null);
   const [deleteUser, setDeleteUser] = useState<AdminUser | null>(null);
   const [resettingPw, setResettingPw] = useState(false);
@@ -199,7 +202,8 @@ export default function AdminPage() {
       )}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        {(['overview', 'users', 'trash', 'quiz', 'wheel'] as const).map((t) => (
+        {(['overview', ...(isTeacher ? (['classes'] as const) : []), 'users', 'trash', 'quiz', 'wheel'] as const).map(
+          (t) => (
           <button
             key={t}
             className={`btn ${tab === t ? 'btn-primary' : 'btn-secondary'}`}
@@ -212,15 +216,18 @@ export default function AdminPage() {
           >
             {t === 'overview'
               ? 'Tổng quan'
-              : t === 'users'
-                ? 'Người dùng'
-                : t === 'trash'
-                  ? 'Danh mục rác'
-                  : t === 'quiz'
-                    ? 'Quiz'
-                    : 'Vòng quay'}
+              : t === 'classes'
+                ? 'Quản trị lớp'
+                : t === 'users'
+                  ? 'Người dùng'
+                  : t === 'trash'
+                    ? 'Danh mục rác'
+                    : t === 'quiz'
+                      ? 'Quiz'
+                      : 'Vòng quay'}
           </button>
-        ))}
+        ),
+        )}
       </div>
 
       {tab === 'overview' && isTeacher && (
@@ -228,6 +235,8 @@ export default function AdminPage() {
           <TeacherClassesPanel />
         </div>
       )}
+
+      {tab === 'classes' && isTeacher && <TeacherClassManagePanel />}
 
       {tab === 'overview' && dash && dash.games && dash.playerScores && (
         <AdminOverviewPanel

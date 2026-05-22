@@ -46,7 +46,7 @@ export default function ProfilePage() {
           <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--green-600)' }}>
             ⭐ {scores?.totalPoints ?? 0}
           </p>
-          {scores && user?.classId && (
+          {scores && (
             <p style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 6 }}>
               Phân loại {scores.sortPoints} · Quiz {scores.quizPoints} · Vòng quay {scores.wheelPoints}
             </p>

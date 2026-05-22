@@ -42,8 +42,8 @@ export function TeacherClassesPanel({
     return (
       <div className="card teacher-classes">
         <p style={{ margin: 0, color: 'var(--gray-600)', fontSize: 14 }}>
-          Chưa có lớp nào trong phạm vi quản lý. Liên hệ quản trị trường để gắn bạn làm GVCN các lớp,
-          hoặc đảm bảo đã có học sinh trong trường.
+          Chưa có lớp nào trong phạm vi quản lý. Liên hệ quản trị trường để gắn bạn làm GVCN (giáo viên
+          chủ nhiệm) cho từng lớp.
         </p>
       </div>
     );

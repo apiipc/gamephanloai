@@ -43,4 +43,16 @@ export class LeaderboardController {
   ) {
     return this.leaderboard.getMyRank(user, parseMode(mode));
   }
+
+  @Get('my-play-stats')
+  @Roles(Role.STUDENT, Role.TEACHER, Role.ORG_ADMIN, Role.SUPER_ADMIN)
+  myPlayStats(@CurrentUser() user: JwtPayload) {
+    return this.leaderboard.myPlayStats(user);
+  }
+
+  @Get('managed-classes')
+  @Roles(Role.TEACHER, Role.ORG_ADMIN, Role.SUPER_ADMIN)
+  managedClasses(@CurrentUser() user: JwtPayload) {
+    return this.leaderboard.managedClassesWithStats(user);
+  }
 }

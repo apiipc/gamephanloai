@@ -131,6 +131,26 @@ export const leaderboardApi = {
         studentCount: number;
       }[]
     >('/leaderboard/classes'),
+  myPlayStats: () =>
+    api<{
+      sortPoints: number;
+      quizPoints: number;
+      wheelPoints: number;
+      totalPoints: number;
+    }>('/leaderboard/my-play-stats'),
+  managedClasses: () =>
+    api<
+      {
+        rank: number;
+        classId: string;
+        className: string;
+        studentCount: number;
+        sortPoints: number;
+        quizPoints: number;
+        wheelPoints: number;
+        totalPoints: number;
+      }[]
+    >('/leaderboard/managed-classes'),
 };
 
 export const quizApi = {
@@ -221,6 +241,11 @@ export const adminApi = {
     }>('/admin/dashboard'),
   users: () => api<unknown[]>('/admin/users'),
   classes: () => api<unknown[]>('/admin/classes'),
+  updateClass: (id: string, data: { teacherId?: string | null; name?: string }) =>
+    api<unknown>(`/admin/classes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
   trashItems: () => api<unknown[]>('/admin/trash-items'),
   createUser: (data: object) =>
     api('/admin/users', { method: 'POST', body: JSON.stringify(data) }),

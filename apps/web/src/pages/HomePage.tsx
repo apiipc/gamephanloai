@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { useAuth } from '../context/AuthContext';
 import { usePlayerScores } from '../hooks/usePlayerScores';
+import { TeacherScoreBanner } from '../components/TeacherScoreBanner';
 
 export default function HomePage() {
-  const { user, isAdmin, refreshUser } = useAuth();
+  const { user, isAdmin, isTeacher, refreshUser } = useAuth();
   const scores = usePlayerScores();
 
   useEffect(() => {
@@ -23,23 +24,27 @@ export default function HomePage() {
           )}
         </header>
 
-        <div
-          className="card"
-          style={{
-            background: 'linear-gradient(135deg, #10b981, #059669)',
-            color: '#fff',
-            marginBottom: 20,
-          }}
-        >
-          <p style={{ fontSize: 13, opacity: 0.9 }}>Tổng điểm 3 trò chơi</p>
-          <p style={{ fontSize: 36, fontWeight: 800 }}>⭐ {scores?.totalPoints ?? 0}</p>
-          {scores && user?.classId && (
-            <p style={{ fontSize: 12, opacity: 0.85, marginTop: 8, lineHeight: 1.5 }}>
-              ♻️ Phân loại {scores.sortPoints} · 🧠 Quiz {scores.quizPoints} · 🎡 Vòng quay{' '}
-              {scores.wheelPoints}
-            </p>
-          )}
-        </div>
+        {isTeacher ? (
+          <TeacherScoreBanner />
+        ) : (
+          <div
+            className="card"
+            style={{
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              color: '#fff',
+              marginBottom: 20,
+            }}
+          >
+            <p style={{ fontSize: 13, opacity: 0.9 }}>Tổng điểm 3 trò chơi</p>
+            <p style={{ fontSize: 36, fontWeight: 800 }}>⭐ {scores?.totalPoints ?? 0}</p>
+            {scores && (
+              <p style={{ fontSize: 12, opacity: 0.85, marginTop: 8, lineHeight: 1.5 }}>
+                ♻️ Phân loại {scores.sortPoints} · 🧠 Quiz {scores.quizPoints} · 🎡 Vòng quay{' '}
+                {scores.wheelPoints}
+              </p>
+            )}
+          </div>
+        )}
 
         <h2 style={{ fontSize: 16, marginBottom: 12 }}>🎮 Mini Game</h2>
         <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 12 }}>

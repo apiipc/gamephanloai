@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { TeacherScoreBanner } from '../components/TeacherScoreBanner';
+import { useAuth } from '../context/AuthContext';
 import { playSound } from '../lib/sounds';
 
 const GAMES = [
@@ -34,10 +36,12 @@ const GAMES = [
 
 export default function PlayPage() {
   const navigate = useNavigate();
+  const { isTeacher } = useAuth();
 
   return (
     <div className="app-shell">
       <div className="page">
+        {isTeacher && <TeacherScoreBanner />}
         <h2 style={{ marginBottom: 8 }}>🎮 Mini Game</h2>
         <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 20 }}>
           CHƠI GAME NHẬN ĐIỂM XANH

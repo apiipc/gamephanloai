@@ -374,7 +374,8 @@ export class AdminService {
     await this.pruneEmptyClasses(user);
 
     let scope: { id?: { in: string[] }; organizationId?: string } = {};
-    if (user.role === 'TEACHER') {
+    const teacherOnly = user.role === 'TEACHER';
+    if (teacherOnly) {
       const classIds = await getTeacherManagedClassIds(this.prisma, user);
       scope = { id: { in: classIds.length ? classIds : ['__none__'] } };
     } else if (user.role === 'SUPER_ADMIN') {
@@ -386,7 +387,7 @@ export class AdminService {
     return this.prisma.class.findMany({
       where: {
         ...scope,
-        students: { some: {} },
+        ...(teacherOnly ? {} : { students: { some: {} } }),
       },
       include: {
         teacher: { select: { id: true, fullName: true } },
@@ -1047,6 +1048,43 @@ export class AdminService {
     });
     await this.log(user, 'CREATE_CLASS', created.id);
     return created;
+  }
+
+  async updateClass(
+    user: JwtPayload,
+    id: string,
+    dto: { teacherId?: string | null; name?: string },
+  ) {
+    if (!user.organizationId && user.role !== 'SUPER_ADMIN') {
+      throw new ForbiddenException();
+    }
+    const cls = await this.prisma.class.findUnique({ where: { id } });
+    if (!cls) throw new NotFoundException('Không tìm thấy lớp');
+    this.assertOrgAccess(user, cls.organizationId);
+
+    if (dto.teacherId !== undefined && dto.teacherId !== null) {
+      const teacher = await this.prisma.user.findFirst({
+        where: {
+          id: dto.teacherId,
+          organizationId: cls.organizationId,
+          role: Role.TEACHER,
+        },
+      });
+      if (!teacher) {
+        throw new BadRequestException('Giáo viên không hợp lệ');
+      }
+    }
+
+    const updated = await this.prisma.class.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
+        ...(dto.teacherId !== undefined ? { teacherId: dto.teacherId } : {}),
+      },
+      include: { teacher: { select: { id: true, fullName: true } } },
+    });
+    await this.log(user, 'UPDATE_CLASS', id);
+    return updated;
   }
 
   async getAuditLogs(user: JwtPayload) {

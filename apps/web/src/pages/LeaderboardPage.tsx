@@ -94,10 +94,26 @@ export default function LeaderboardPage() {
   }, [selectedClassId, mode, showClassPicker, user?.role]);
 
   useEffect(() => {
+    if (isTeacher) {
+      leaderboardApi
+        .managedClasses()
+        .then((rows) =>
+          setClassRanks(
+            rows.map((c) => ({
+              rank: c.rank,
+              className: c.className,
+              totalPoints: c.totalPoints,
+              studentCount: c.studentCount,
+            })),
+          ),
+        )
+        .catch(() => setClassRanks([]));
+      return;
+    }
     if (isAdmin) {
       leaderboardApi.classes().then(setClassRanks).catch(() => setClassRanks([]));
     }
-  }, [isAdmin]);
+  }, [isAdmin, isTeacher]);
 
   const board = useMemo(() => rankEntries(raw, mode), [raw, mode]);
 
@@ -214,7 +230,7 @@ export default function LeaderboardPage() {
         {isAdmin && classRanks.length > 0 && (
           <>
             <h3 style={{ fontSize: 16, marginBottom: 12 }}>
-              {isTeacher ? 'Tổng hợp các lớp (trường)' : 'Xếp hạng lớp (trường)'}
+              {isTeacher ? 'Tổng điểm các lớp bạn quản lý' : 'Xếp hạng lớp (trường)'}
             </h3>
             <div className="card leaderboard-class-table-wrap">
               <table className="leaderboard-table">
@@ -222,7 +238,7 @@ export default function LeaderboardPage() {
                   <tr>
                     <th>#</th>
                     <th>Lớp</th>
-                    <th>Tổng điểm xanh</th>
+                    <th>Tổng 3 trò</th>
                     <th>HS</th>
                   </tr>
                 </thead>
@@ -231,7 +247,7 @@ export default function LeaderboardPage() {
                     <tr key={c.className}>
                       <td>{c.rank}</td>
                       <td>{c.className}</td>
-                      <td>⭐ {c.totalPoints}</td>
+                      <td>{c.totalPoints}</td>
                       <td>{c.studentCount}</td>
                     </tr>
                   ))}

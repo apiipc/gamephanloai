@@ -149,6 +149,16 @@ export class AdminController {
     return this.admin.createClass(user, dto.name, dto.teacherId);
   }
 
+  @Patch('classes/:id')
+  @Roles(Role.ORG_ADMIN, Role.SUPER_ADMIN)
+  updateClass(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: { teacherId?: string | null; name?: string },
+  ) {
+    return this.admin.updateClass(user, id, dto);
+  }
+
   @Get('users')
   @Roles(Role.ORG_ADMIN, Role.SUPER_ADMIN, Role.TEACHER)
   users(@CurrentUser() user: JwtPayload) {

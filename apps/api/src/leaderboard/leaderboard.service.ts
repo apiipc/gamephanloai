@@ -134,42 +134,86 @@ export class LeaderboardService {
     return this.withRanks(rows, mode);
   }
 
-  async classAggregate(user: JwtPayload) {
-    if (!user.organizationId && user.role !== 'SUPER_ADMIN') {
-      return [];
-    }
-
-    const orgId = user.organizationId;
-    let classWhere: { organizationId?: string; id?: { in: string[] } } = orgId
-      ? { organizationId: orgId }
-      : {};
+  /** Điểm 3 trò của từng lớp (tổng HS trong lớp). */
+  async managedClassesWithStats(user: JwtPayload) {
+    let classWhere: { organizationId?: string; id?: { in: string[] } } = {};
 
     if (user.role === 'TEACHER') {
       const classIds = await getTeacherManagedClassIds(this.prisma, user);
-      classWhere = {
-        ...(orgId ? { organizationId: orgId } : {}),
-        id: { in: classIds.length ? classIds : ['__none__'] },
-      };
+      if (!classIds.length) return [];
+      classWhere = { id: { in: classIds } };
+    } else if (user.organizationId) {
+      classWhere = { organizationId: user.organizationId };
+    } else if (user.role !== 'SUPER_ADMIN') {
+      return [];
     }
 
     const classes = await this.prisma.class.findMany({
       where: classWhere,
-      include: {
-        students: {
-          select: { greenPoints: true },
-        },
-      },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
     });
 
-    return classes
-      .map((c) => ({
-        classId: c.id,
-        className: c.name,
-        totalPoints: c.students.reduce((sum, s) => sum + s.greenPoints, 0),
-        studentCount: c.students.length,
-      }))
+    const stats = await Promise.all(
+      classes.map(async (cls) => {
+        const rows = await this.buildClassRows(cls.id);
+        const sortPoints = rows.reduce((s, r) => s + r.sortPoints, 0);
+        const quizPoints = rows.reduce((s, r) => s + r.quizPoints, 0);
+        const wheelPoints = rows.reduce((s, r) => s + r.wheelPoints, 0);
+        return {
+          classId: cls.id,
+          className: cls.name,
+          studentCount: rows.length,
+          sortPoints,
+          quizPoints,
+          wheelPoints,
+          totalPoints: sortPoints + quizPoints + wheelPoints,
+        };
+      }),
+    );
+
+    return stats
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .map((c, i) => ({ ...c, rank: i + 1 }));
+  }
+
+  async classAggregate(user: JwtPayload) {
+    const rows = await this.managedClassesWithStats(user);
+    return rows.map((c) => ({
+      rank: c.rank,
+      classId: c.classId,
+      className: c.className,
+      totalPoints: c.totalPoints,
+      studentCount: c.studentCount,
+    }));
+  }
+
+  /** Điểm cá nhân khi GV/admin tự chơi (không cần classId). */
+  async myPlayStats(user: JwtPayload) {
+    const userId = user.sub;
+    const [sortAgg, quizAgg, wheelAgg] = await Promise.all([
+      this.prisma.gameSession.aggregate({
+        where: { userId, finishedAt: { not: null } },
+        _sum: { score: true },
+      }),
+      this.prisma.quizSession.aggregate({
+        where: { userId, finishedAt: { not: null } },
+        _sum: { score: true },
+      }),
+      this.prisma.wheelSpinLog.aggregate({
+        where: { userId, prizeType: 'POINTS' },
+        _sum: { value: true },
+      }),
+    ]);
+    const sortPoints = sortAgg._sum.score ?? 0;
+    const quizPoints = quizAgg._sum.score ?? 0;
+    const wheelPoints = wheelAgg._sum.value ?? 0;
+    return {
+      sortPoints,
+      quizPoints,
+      wheelPoints,
+      totalPoints: sortPoints + quizPoints + wheelPoints,
+    };
   }
 
   async getMyRank(user: JwtPayload, mode: LeaderboardMode = 'green') {
