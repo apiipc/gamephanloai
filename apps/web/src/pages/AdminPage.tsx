@@ -10,7 +10,6 @@ import { TrashCatalog } from '../components/TrashCatalog';
 import { WheelAdminPanel } from '../components/WheelAdminPanel';
 import { UserAdminPanel } from '../components/UserAdminPanel';
 import { AdminOverviewPanel } from '../components/AdminOverviewPanel';
-import { TeacherClassesPanel } from '../components/TeacherClassesPanel';
 import { TeacherClassManagePanel } from '../components/TeacherClassManagePanel';
 import type { PlayerScoreRow } from '../components/AdminOverviewPanel';
 
@@ -50,8 +49,8 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [trash, setTrash] = useState<TrashRow[]>([]);
   const [tab, setTab] = useState<
-    'overview' | 'classes' | 'users' | 'trash' | 'quiz' | 'wheel'
-  >('overview');
+    'overview' | 'users' | 'trash' | 'quiz' | 'wheel'
+  >(isTeacher ? 'users' : 'overview');
   const [resetUser, setResetUser] = useState<AdminUser | null>(null);
   const [deleteUser, setDeleteUser] = useState<AdminUser | null>(null);
   const [resettingPw, setResettingPw] = useState(false);
@@ -202,8 +201,11 @@ export default function AdminPage() {
       )}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        {(['overview', ...(isTeacher ? (['classes'] as const) : []), 'users', 'trash', 'quiz', 'wheel'] as const).map(
-          (t) => (
+        {(
+          isTeacher
+            ? (['users', 'quiz'] as const)
+            : (['overview', 'users', 'trash', 'quiz', 'wheel'] as const)
+        ).map((t) => (
           <button
             key={t}
             className={`btn ${tab === t ? 'btn-primary' : 'btn-secondary'}`}
@@ -216,29 +218,18 @@ export default function AdminPage() {
           >
             {t === 'overview'
               ? 'Tổng quan'
-              : t === 'classes'
-                ? 'Quản trị lớp'
-                : t === 'users'
-                  ? 'Người dùng'
-                  : t === 'trash'
-                    ? 'Danh mục rác'
-                    : t === 'quiz'
-                      ? 'Quiz'
-                      : 'Vòng quay'}
+              : t === 'users'
+                ? 'Người dùng'
+                : t === 'trash'
+                  ? 'Danh mục rác'
+                  : t === 'quiz'
+                    ? 'Quiz'
+                    : 'Vòng quay'}
           </button>
-        ),
-        )}
+        ))}
       </div>
 
-      {tab === 'overview' && isTeacher && (
-        <div style={{ marginBottom: 16 }}>
-          <TeacherClassesPanel />
-        </div>
-      )}
-
-      {tab === 'classes' && isTeacher && <TeacherClassManagePanel />}
-
-      {tab === 'overview' && dash && dash.games && dash.playerScores && (
+      {tab === 'overview' && !isTeacher && dash && dash.games && dash.playerScores && (
         <AdminOverviewPanel
           userCount={dash.userCount}
           classCount={dash.classCount}
@@ -250,7 +241,7 @@ export default function AdminPage() {
         />
       )}
 
-      {tab === 'overview' && dash && !dash.games && (
+      {tab === 'overview' && !isTeacher && dash && !dash.games && (
         <p style={{ color: 'var(--gray-500)' }}>
           Đang tải thống kê điểm… Hãy restart API và tải lại trang.
         </p>
@@ -259,17 +250,22 @@ export default function AdminPage() {
 
       {tab === 'users' && (
         <>
+          {isTeacher && <TeacherClassManagePanel />}
           {canCreateUser && user && (
-            <UserAdminPanel
-              users={users}
-              actorRole={user.role}
-              dataVersion={dataVersion}
-              onMessage={setMsg}
-              onChanged={load}
-            />
+            <div style={{ marginTop: isTeacher ? 16 : 0 }}>
+              <UserAdminPanel
+                users={users}
+                actorRole={user.role}
+                dataVersion={dataVersion}
+                onMessage={setMsg}
+                onChanged={load}
+              />
+            </div>
           )}
           <div className="user-admin__table-wrap card" style={{ marginTop: 16 }}>
-            <h3 style={{ marginBottom: 12, fontSize: 16 }}>Danh sách người dùng</h3>
+            <h3 style={{ marginBottom: 12, fontSize: 16 }}>
+              {isTeacher ? 'Thao tác học sinh' : 'Danh sách người dùng'}
+            </h3>
             <table className="wheel-admin__table">
               <thead>
                 <tr>

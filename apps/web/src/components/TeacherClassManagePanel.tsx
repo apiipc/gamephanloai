@@ -79,7 +79,7 @@ export function TeacherClassManagePanel() {
   return (
     <div className="teacher-class-manage">
       <div className="teacher-classes card" style={{ marginBottom: 16 }}>
-        <h3 className="teacher-classes__title">📚 Lớp bạn quản lý</h3>
+        <h3 className="teacher-classes__title">📚 Lớp & học sinh phụ trách</h3>
         <ul className="teacher-classes__list">
           {pickerList.map((c) => {
             const stat = classes.find((x) => x.classId === c.id);
