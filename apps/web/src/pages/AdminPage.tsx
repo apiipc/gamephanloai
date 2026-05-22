@@ -10,7 +10,6 @@ import { TrashCatalog } from '../components/TrashCatalog';
 import { WheelAdminPanel } from '../components/WheelAdminPanel';
 import { UserAdminPanel } from '../components/UserAdminPanel';
 import { AdminOverviewPanel } from '../components/AdminOverviewPanel';
-import { AudioSettingsCard } from '../components/AudioSettingsCard';
 import type { PlayerScoreRow } from '../components/AdminOverviewPanel';
 
 interface Dashboard {
@@ -170,10 +169,6 @@ export default function AdminPage() {
           </button>
         </div>
       </header>
-
-      <div style={{ marginBottom: 20 }}>
-        <AudioSettingsCard />
-      </div>
 
       {msg && (
         <p style={{ background: 'var(--green-50)', padding: 12, borderRadius: 8, marginBottom: 16 }}>

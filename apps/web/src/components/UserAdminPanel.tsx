@@ -30,6 +30,7 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
   const [formRole, setFormRole] = useState<Role>('STUDENT');
   const [formError, setFormError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     adminApi
@@ -47,7 +48,8 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError('');
-    const fd = new FormData(e.currentTarget);
+    const formEl = formRef.current ?? e.currentTarget;
+    const fd = new FormData(formEl);
     const fullName = String(fd.get('fullName') ?? '').trim();
     const email = String(fd.get('email') ?? '').trim().toLowerCase();
     const password = String(fd.get('password') ?? '');
@@ -79,7 +81,7 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
         role: formRole,
         ...(formRole === 'STUDENT' ? { className } : {}),
       });
-      e.currentTarget.reset();
+      formEl.reset();
       setFormRole('STUDENT');
       setFormError('');
       onMessage(`Đã tạo tài khoản ${email}`);
@@ -133,7 +135,7 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
         <p className="user-admin__desc">
           Tạo một học sinh / giáo viên / quản trị. Mật khẩu tối thiểu 6 ký tự.
         </p>
-        <form className="user-admin__form" onSubmit={handleCreate}>
+        <form ref={formRef} className="user-admin__form" onSubmit={handleCreate}>
           <label className="user-admin__field">
             <span>Họ tên *</span>
             <input name="fullName" required placeholder="Nguyễn Văn An" />
