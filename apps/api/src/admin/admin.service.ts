@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma, Role, TrashCategory } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { DEFAULT_USER_PASSWORD } from '../common/default-password';
 import { JwtPayload } from '../common/decorators';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -551,6 +552,24 @@ export class AdminService {
     await this.log(user, 'UPDATE_USER', id, { fields: Object.keys(data) });
     const { passwordHash: __, ...safe } = updated;
     return safe;
+  }
+
+  async resetUserPassword(user: JwtPayload, id: string) {
+    const target = await this.prisma.user.findUnique({
+      where: { id },
+      include: { class: { select: { teacherId: true } } },
+    });
+    if (!target) throw new NotFoundException();
+    this.assertCanManageStudent(user, target);
+
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        passwordHash: await bcrypt.hash(DEFAULT_USER_PASSWORD, 10),
+      },
+    });
+    await this.log(user, 'RESET_PASSWORD', id, { email: target.email });
+    return { ok: true, defaultPassword: DEFAULT_USER_PASSWORD };
   }
 
   async deleteUser(user: JwtPayload, id: string) {

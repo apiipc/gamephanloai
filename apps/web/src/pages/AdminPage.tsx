@@ -48,6 +48,8 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [trash, setTrash] = useState<TrashRow[]>([]);
   const [tab, setTab] = useState<'overview' | 'users' | 'trash' | 'quiz' | 'wheel'>('overview');
+  const [resetUser, setResetUser] = useState<AdminUser | null>(null);
+  const [resettingPw, setResettingPw] = useState(false);
   const [msg, setMsg] = useState('');
   const [quizConfig, setQuizConfig] = useState<QuizConfig | null>(null);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
@@ -240,6 +242,7 @@ export default function AdminPage() {
                   <th>Vai trò</th>
                   <th>Lớp</th>
                   <th>Điểm</th>
+                  {canCreateUser && <th>Thao tác</th>}
                 </tr>
               </thead>
               <tbody>
@@ -250,6 +253,21 @@ export default function AdminPage() {
                     <td>{roleBadge(u.role)}</td>
                     <td>{u.class?.name ?? '—'}</td>
                     <td>{u.greenPoints}</td>
+                    {canCreateUser && (
+                      <td>
+                        {u.role === 'STUDENT' ? (
+                          <button
+                            type="button"
+                            className="btn btn-secondary wheel-admin__btn-sm"
+                            onClick={() => setResetUser(u)}
+                          >
+                            Reset MK
+                          </button>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -453,6 +471,62 @@ export default function AdminPage() {
 
       {tab === 'wheel' && canManageWheel && (
         <WheelAdminPanel onMessage={setMsg} />
+      )}
+
+      {resetUser && (
+        <div
+          className="feedback-overlay"
+          style={{ position: 'fixed', zIndex: 200 }}
+          role="presentation"
+          onClick={() => !resettingPw && setResetUser(null)}
+        >
+          <div
+            className="card"
+            style={{ maxWidth: 400, width: '100%', margin: 16, zIndex: 201 }}
+            role="dialog"
+            aria-labelledby="admin-users-reset-title"
+            onClick={(ev) => ev.stopPropagation()}
+          >
+            <h3 id="admin-users-reset-title" style={{ marginTop: 0 }}>
+              Reset mật khẩu?
+            </h3>
+            <p style={{ fontSize: 14, color: 'var(--gray-700)' }}>
+              Đặt lại MK của <strong>{resetUser.fullName}</strong> ({resetUser.email}) về mật khẩu
+              mặc định.
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={resettingPw}
+                onClick={async () => {
+                  setResettingPw(true);
+                  try {
+                    const res = await adminApi.resetUserPassword(resetUser.id);
+                    setMsg(
+                      `Đã reset MK cho ${resetUser.fullName}. Mật khẩu mặc định: ${res.defaultPassword}`,
+                    );
+                    setResetUser(null);
+                  } catch (e) {
+                    setMsg(e instanceof Error ? e.message : 'Không reset được');
+                  } finally {
+                    setResettingPw(false);
+                  }
+                }}
+              >
+                {resettingPw ? 'Đang reset…' : 'Reset MK'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={resettingPw}
+                onClick={() => setResetUser(null)}
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

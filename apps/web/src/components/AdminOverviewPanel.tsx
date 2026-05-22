@@ -51,8 +51,10 @@ export function AdminOverviewPanel({
 
   const [editRow, setEditRow] = useState<PlayerScoreRow | null>(null);
   const [deleteRow, setDeleteRow] = useState<PlayerScoreRow | null>(null);
+  const [resetRow, setResetRow] = useState<PlayerScoreRow | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [formError, setFormError] = useState('');
 
   const canEdit = Boolean(onDataChanged);
@@ -99,6 +101,22 @@ export function AdminOverviewPanel({
       setFormError(err instanceof Error ? err.message : 'Không lưu được');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetRow) return;
+    setResetting(true);
+    try {
+      const res = await adminApi.resetUserPassword(resetRow.id);
+      notify(
+        `Đã reset MK cho ${resetRow.fullName}. Mật khẩu mặc định: ${res.defaultPassword}`,
+      );
+      setResetRow(null);
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'Không reset được mật khẩu');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -174,8 +192,8 @@ export function AdminOverviewPanel({
           {canEdit && (
             <>
               {' '}
-              Dùng <strong>Sửa</strong> / <strong>Xóa</strong> để quản lý tài khoản học sinh trong
-              phạm vi của bạn.
+              Dùng <strong>Sửa</strong>, <strong>Reset MK</strong> (về mật khẩu mặc định) hoặc{' '}
+              <strong>Xóa</strong> để quản lý tài khoản học sinh trong phạm vi của bạn.
             </>
           )}
         </p>
@@ -189,7 +207,7 @@ export function AdminOverviewPanel({
                 <th title="Quiz">🧠 Quiz</th>
                 <th title="Vòng quay">🎡 Vòng quay</th>
                 <th>Tổng 3 trò</th>
-                {canEdit && <th style={{ minWidth: 110 }}>Thao tác</th>}
+                {canEdit && <th style={{ minWidth: 200 }}>Thao tác</th>}
               </tr>
             </thead>
             <tbody>
@@ -238,6 +256,13 @@ export function AdminOverviewPanel({
                             }}
                           >
                             Sửa
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary wheel-admin__btn-sm"
+                            onClick={() => setResetRow(row)}
+                          >
+                            Reset MK
                           </button>
                           <button
                             type="button"
@@ -324,6 +349,49 @@ export function AdminOverviewPanel({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {resetRow && (
+        <div
+          className="feedback-overlay"
+          style={{ position: 'fixed', zIndex: 200 }}
+          role="presentation"
+          onClick={() => !resetting && setResetRow(null)}
+        >
+          <div
+            className="card"
+            style={{ maxWidth: 400, width: '100%', margin: 16, zIndex: 201 }}
+            role="dialog"
+            aria-labelledby="admin-reset-password-title"
+            onClick={(ev) => ev.stopPropagation()}
+          >
+            <h3 id="admin-reset-password-title" style={{ marginTop: 0 }}>
+              Reset mật khẩu?
+            </h3>
+            <p style={{ fontSize: 14, color: 'var(--gray-700)' }}>
+              Đặt lại mật khẩu của <strong>{resetRow.fullName}</strong> ({resetRow.email}) về mật
+              khẩu mặc định của hệ thống. Học sinh có thể đăng nhập và đổi MK tại Hồ sơ.
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={resetting}
+                onClick={() => void handleResetPassword()}
+              >
+                {resetting ? 'Đang reset…' : 'Reset MK'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={resetting}
+                onClick={() => setResetRow(null)}
+              >
+                Hủy
+              </button>
+            </div>
           </div>
         </div>
       )}

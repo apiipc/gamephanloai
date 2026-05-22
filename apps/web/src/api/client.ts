@@ -77,6 +77,11 @@ export const authApi = {
       body: JSON.stringify({ email, password }),
     }),
   me: () => api<import('../types').User>('/auth/me'),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api<{ ok: boolean }>('/auth/change-password', {
+      method: 'PATCH',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
 };
 
 export const gameApi = {
@@ -226,6 +231,11 @@ export const adminApi = {
     }),
   deleteUser: (id: string) =>
     api<{ ok: boolean }>(`/admin/users/${id}`, { method: 'DELETE' }),
+  resetUserPassword: (id: string) =>
+    api<{ ok: boolean; defaultPassword: string }>(
+      `/admin/users/${id}/reset-password`,
+      { method: 'POST' },
+    ),
   importUsers: (users: object[]) =>
     api<{
       created: number;

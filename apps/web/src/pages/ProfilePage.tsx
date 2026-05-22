@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { AudioSettingsCard } from '../components/AudioSettingsCard';
+import { ChangePasswordCard } from '../components/ChangePasswordCard';
 import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { usePlayerScores } from '../hooks/usePlayerScores';
@@ -51,6 +52,7 @@ export default function ProfilePage() {
             </p>
           )}
         </div>
+        <ChangePasswordCard />
         <AudioSettingsCard />
         <Link
           to="/sounds"

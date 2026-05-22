@@ -171,6 +171,12 @@ export class AdminController {
     return this.admin.updateUser(user, id, dto);
   }
 
+  @Post('users/:id/reset-password')
+  @Roles(Role.ORG_ADMIN, Role.SUPER_ADMIN, Role.TEACHER)
+  resetUserPassword(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.admin.resetUserPassword(user, id);
+  }
+
   @Delete('users/:id')
   @Roles(Role.ORG_ADMIN, Role.SUPER_ADMIN, Role.TEACHER)
   deleteUser(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
