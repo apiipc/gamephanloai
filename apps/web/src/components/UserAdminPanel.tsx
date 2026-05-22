@@ -112,17 +112,25 @@ export function UserAdminPanel({
     setExcelError('');
     setUploading(true);
     try {
-      const items = await parseUserExcel(file);
-      const res = await adminApi.importUsers(items);
+      const { rows, skipped } = await parseUserExcel(file);
+      const res = await adminApi.importUsers(rows);
       const errLines = res.errors
-        .slice(0, 3)
+        .slice(0, 5)
         .map((x) => `Dòng ${x.row} (${x.email}): ${x.message}`)
         .join(' · ');
+      const skipLines = skipped
+        .slice(0, 3)
+        .map((x) => `Dòng ${x.row}: ${x.reason}`)
+        .join(' · ');
       onMessage(
-        `Import: ${res.created} mới, ${res.updated} cập nhật` +
+        `Import ${rows.length} dòng: ${res.created} mới, ${res.updated} cập nhật` +
           (res.removed ? `, ${res.removed} HS đã xóa (không còn trong file)` : '') +
           (res.classesRemoved ? `, ${res.classesRemoved} lớp trống đã xóa` : '') +
-          (res.failed ? ` — ${res.failed} lỗi${errLines ? `: ${errLines}` : ''}` : ''),
+          (res.failed ? ` — ${res.failed} lỗi server${errLines ? `: ${errLines}` : ''}` : '') +
+          (skipped.length ? ` — ${skipped.length} dòng bỏ qua (Excel)${skipLines ? `: ${skipLines}` : ''}` : '') +
+          (res.failed && res.failed > 0
+            ? ' (không xóa HS cũ vì còn lỗi — sửa file và import lại)'
+            : ''),
       );
       loadClasses();
       onChanged();
@@ -200,9 +208,9 @@ export function UserAdminPanel({
       <div className="card user-admin__block quiz-excel-upload">
         <h3 className="user-admin__title">📤 Nhập danh sách từ Excel</h3>
         <p className="user-admin__desc">
-          Tải file mẫu, điền danh sách <strong>đầy đủ</strong> rồi upload. Học sinh có trong file
-          được tạo/cập nhật; HS <strong>không còn trong file</strong> sẽ bị xóa; lớp không còn HS
-          sẽ được gỡ. Cột <strong>Vai trò</strong>: HS, GV hoặc Admin.
+          Tải file mẫu, điền danh sách (tối đa <strong>2000</strong> dòng) rồi upload. Mật khẩu trống
+          = mặc định <strong>123456</strong>. Khi <strong>toàn bộ</strong> dòng hợp lệ: HS không còn
+          trong file sẽ bị xóa. Cột <strong>Vai trò</strong>: HS, GV hoặc Admin.
         </p>
         <div className="quiz-excel-upload__actions">
           <button type="button" className="btn btn-secondary" onClick={() => downloadUserTemplate()}>

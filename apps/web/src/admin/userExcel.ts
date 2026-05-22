@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { DEFAULT_USER_PASSWORD } from '../lib/defaultPassword';
 import type { Role } from '../types';
 
 export interface UserImportRow {
@@ -7,6 +8,11 @@ export interface UserImportRow {
   fullName: string;
   role: Role;
   className?: string;
+}
+
+export interface UserExcelParseResult {
+  rows: UserImportRow[];
+  skipped: { row: number; reason: string }[];
 }
 
 const TEMPLATE_HEADERS = [
@@ -39,6 +45,19 @@ function cell(row: Record<string, unknown>, ...keys: string[]): string {
   return '';
 }
 
+/** Mật khẩu từ Excel (ô số thường mất số 0 đầu — ép chuỗi). */
+function passwordCell(row: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    const v = row[key];
+    if (v == null || v === '') continue;
+    if (typeof v === 'number' && Number.isFinite(v)) {
+      return String(Math.trunc(v));
+    }
+    return String(v).trim();
+  }
+  return '';
+}
+
 export function parseRole(raw: string): Role {
   const r = norm(raw).replace(/\s+/g, '_');
   if (['hs', 'hoc_sinh', 'student', 'học_sinh'].includes(r)) return 'STUDENT';
@@ -48,10 +67,10 @@ export function parseRole(raw: string): Role {
   if (['STUDENT', 'TEACHER', 'ORG_ADMIN', 'SUPER_ADMIN'].includes(raw.trim().toUpperCase())) {
     return raw.trim().toUpperCase() as Role;
   }
-  throw new Error(`Vai trò «${raw}» không hợp lệ — dùng HS, GV, Admin hoặc STUDENT, TEACHER, ORG_ADMIN`);
+  throw new Error(`Vai trò «${raw}» không hợp lệ — dùng HS, GV, Admin`);
 }
 
-export async function parseUserExcel(file: File): Promise<UserImportRow[]> {
+export async function parseUserExcel(file: File): Promise<UserExcelParseResult> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: 'array' });
   const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -59,13 +78,16 @@ export async function parseUserExcel(file: File): Promise<UserImportRow[]> {
 
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
     defval: '',
-    raw: false,
+    raw: true,
   });
   if (rows.length === 0) throw new Error('Sheet trống — thêm ít nhất một dòng người dùng');
 
   const out: UserImportRow[] = [];
+  const skipped: { row: number; reason: string }[] = [];
 
-  for (const raw of rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const raw = rows[i];
+    const rowNum = i + 2;
     const mapped: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(raw)) {
       mapped[norm(k)] = v;
@@ -73,39 +95,51 @@ export async function parseUserExcel(file: File): Promise<UserImportRow[]> {
 
     const fullName = cell(mapped, 'ho ten', 'hoten', 'fullname', 'ten');
     const email = cell(mapped, 'email', 'mail');
-    const password = cell(mapped, 'mat khau', 'password', 'mk');
+    let password = passwordCell(mapped, 'mat khau', 'password', 'mk');
     const roleRaw = cell(mapped, 'vai tro', 'role');
     const className = cell(mapped, 'lop', 'class', 'ten lop') || undefined;
 
     if (!fullName && !email) continue;
 
-    if (!fullName || !email || !password || !roleRaw) {
-      throw new Error(
-        `Dòng thiếu dữ liệu (${email || fullName || 'trống'}): cần đủ Họ tên, Email, Mật khẩu, Vai trò`,
-      );
-    }
-    if (password.length < 6) {
-      throw new Error(`Email ${email}: mật khẩu tối thiểu 6 ký tự`);
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      throw new Error(`Email không hợp lệ: ${email}`);
-    }
+    try {
+      if (!fullName || !email || !roleRaw) {
+        throw new Error('Thiếu Họ tên, Email hoặc Vai trò');
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new Error('Email không hợp lệ');
+      }
+      if (!password || password.length < 6) {
+        password = DEFAULT_USER_PASSWORD;
+      }
 
-    const role = parseRole(roleRaw);
-    out.push({
-      fullName,
-      email: email.toLowerCase(),
-      password,
-      role,
-      className,
-    });
+      const role = parseRole(roleRaw);
+      if (role === 'STUDENT' && !className?.trim()) {
+        throw new Error('Học sinh cần cột Lớp');
+      }
+
+      out.push({
+        fullName,
+        email: email.toLowerCase(),
+        password,
+        role,
+        className: className?.trim() || undefined,
+      });
+    } catch (e) {
+      skipped.push({
+        row: rowNum,
+        reason: e instanceof Error ? e.message : 'Dòng không hợp lệ',
+      });
+    }
   }
 
   if (out.length === 0) {
-    throw new Error('Không có dòng hợp lệ. Tải file mẫu và kiểm tra tiêu đề cột.');
+    const hint = skipped.length
+      ? ` ${skipped.length} dòng lỗi (vd. dòng ${skipped[0].row}: ${skipped[0].reason}).`
+      : '';
+    throw new Error(`Không có dòng hợp lệ.${hint}`);
   }
 
-  return out;
+  return { rows: out, skipped };
 }
 
 export function downloadUserTemplate(): void {

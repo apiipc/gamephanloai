@@ -7,6 +7,7 @@ import {
 import { Prisma, Role, TrashCategory } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { DEFAULT_USER_PASSWORD } from '../common/default-password';
+import { isValidEmail, normalizeEmail } from '../common/email';
 import { JwtPayload } from '../common/decorators';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -16,6 +17,8 @@ import {
   TRASH_EMOJI_FALLBACK,
 } from './trash-image.util';
 import { syncTrashFromManifest } from './trash-manifest.sync';
+
+const MAX_IMPORT_USERS = 2000;
 
 @Injectable()
 export class AdminService {
@@ -490,7 +493,11 @@ export class AdminService {
       organizationId?: string;
     },
   ) {
-    const email = data.email.trim().toLowerCase();
+    const email = normalizeEmail(data.email);
+
+    if (!data.password || data.password.length < 6) {
+      throw new BadRequestException('Mật khẩu tối thiểu 6 ký tự');
+    }
 
     if (user.role === 'TEACHER' && data.role !== 'STUDENT') {
       throw new ForbiddenException();
@@ -590,7 +597,7 @@ export class AdminService {
     if (dto.fullName !== undefined) data.fullName = dto.fullName.trim();
 
     if (dto.email !== undefined) {
-      const emailNext = dto.email.trim().toLowerCase();
+      const emailNext = normalizeEmail(dto.email);
       if (emailNext !== target.email) {
         const exists = await this.prisma.user.findUnique({
           where: { email: emailNext },
@@ -669,6 +676,43 @@ export class AdminService {
     return { ok: true, classesRemoved };
   }
 
+  /** Cập nhật GV/Admin khi import Excel (không qua assertCanManageStudent). */
+  private async updateStaffFromImport(
+    actor: JwtPayload,
+    targetId: string,
+    row: {
+      email: string;
+      password: string;
+      fullName: string;
+    },
+    orgId: string,
+  ) {
+    const target = await this.prisma.user.findUnique({ where: { id: targetId } });
+    if (!target) throw new NotFoundException();
+    if (target.organizationId && target.organizationId !== orgId) {
+      throw new BadRequestException('Email thuộc tổ chức khác');
+    }
+    if (actor.role === 'TEACHER') {
+      throw new ForbiddenException();
+    }
+
+    const emailNext = normalizeEmail(row.email);
+    if (emailNext !== target.email) {
+      const exists = await this.prisma.user.findUnique({ where: { email: emailNext } });
+      if (exists) throw new BadRequestException('Email đã được dùng');
+    }
+
+    const data: { fullName: string; email: string; passwordHash?: string } = {
+      fullName: row.fullName.trim(),
+      email: emailNext,
+    };
+    if (row.password?.length >= 6) {
+      data.passwordHash = await bcrypt.hash(row.password, 10);
+    }
+
+    await this.prisma.user.update({ where: { id: targetId }, data });
+  }
+
   async importUsers(
     user: JwtPayload,
     rows: {
@@ -681,6 +725,11 @@ export class AdminService {
   ) {
     if (!rows.length) {
       throw new BadRequestException('Danh sách người dùng trống');
+    }
+    if (rows.length > MAX_IMPORT_USERS) {
+      throw new BadRequestException(
+        `Tối đa ${MAX_IMPORT_USERS} tài khoản mỗi lần import (file có ${rows.length})`,
+      );
     }
 
     let orgId = user.organizationId;
@@ -702,8 +751,15 @@ export class AdminService {
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const rowNum = i + 2;
-      const email = row.email.trim().toLowerCase();
+      const email = normalizeEmail(row.email);
       try {
+        if (!isValidEmail(email)) {
+          throw new BadRequestException('Email không hợp lệ');
+        }
+
+        const password =
+          row.password?.length >= 6 ? row.password : DEFAULT_USER_PASSWORD;
+
         if (row.role === 'STUDENT' && !row.className?.trim()) {
           throw new BadRequestException('Học sinh cần có cột Lớp');
         }
@@ -713,21 +769,29 @@ export class AdminService {
         });
 
         if (existing) {
-          if (existing.organizationId !== orgId) {
+          if (existing.organizationId && existing.organizationId !== orgId) {
             throw new BadRequestException('Email thuộc tổ chức khác');
           }
-          await this.updateUser(user, existing.id, {
-            fullName: row.fullName.trim(),
-            email,
-            password: row.password?.length ? row.password : undefined,
-            className:
-              row.role === 'STUDENT' ? row.className?.trim() || undefined : undefined,
-          });
+          if (existing.role === 'STUDENT') {
+            await this.updateUser(user, existing.id, {
+              fullName: row.fullName.trim(),
+              email,
+              password,
+              className:
+                row.role === 'STUDENT' ? row.className?.trim() || undefined : undefined,
+            });
+          } else {
+            await this.updateStaffFromImport(user, existing.id, {
+              email,
+              password,
+              fullName: row.fullName,
+            }, orgId);
+          }
           updated++;
         } else {
           await this.createUser(user, {
             email,
-            password: row.password,
+            password,
             fullName: row.fullName.trim(),
             role: row.role,
             className: row.className?.trim() || undefined,
@@ -753,7 +817,8 @@ export class AdminService {
     let removed = 0;
     let classesRemoved = 0;
 
-    if (importedStudentEmails.size > 0) {
+    // Chỉ xóa HS không còn trong file khi mọi dòng import thành công (tránh xóa nhầm khi lỗi một phần)
+    if (importedStudentEmails.size > 0 && errors.length === 0) {
       const staleWhere: {
         role: typeof Role.STUDENT;
         organizationId: string;

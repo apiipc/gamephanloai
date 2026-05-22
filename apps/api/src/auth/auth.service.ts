@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { normalizeEmail } from '../common/email';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -15,8 +16,9 @@ export class AuthService {
   ) {}
 
   async login(email: string, password: string) {
+    const emailNorm = normalizeEmail(email);
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: emailNorm },
       include: {
         organization: true,
         class: true,

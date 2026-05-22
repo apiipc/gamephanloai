@@ -13,7 +13,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:remove-demo-users": "tsx scripts/remove-demo-users.ts"
+    "db:remove-demo-users": "tsx scripts/remove-demo-users.ts",
+    "db:audit-users": "tsx scripts/audit-users.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.12",

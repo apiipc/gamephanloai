@@ -1,11 +1,19 @@
 import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsString, Matches, MinLength } from 'class-validator';
+import { normalizeEmail } from '../common/email';
 import { CurrentUser, JwtPayload } from '../common/decorators';
 import { JwtAuthGuard } from '../common/guards';
 import { AuthService } from './auth.service';
 
 class LoginDto {
-  @IsEmail()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? normalizeEmail(value) : value,
+  )
+  @IsString()
+  @Matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
+    message: 'Email không hợp lệ',
+  })
   email!: string;
 
   @IsString()
