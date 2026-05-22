@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { WheelMissionKey, WheelPrizeType } from '@prisma/client';
 import { JwtPayload } from '../common/decorators';
+import { canPlayGames } from '../common/teacher-scope';
 import { PrismaService } from '../prisma/prisma.service';
 
 function todayKey(d = new Date()): string {
@@ -169,8 +170,8 @@ export class WheelService {
   }
 
   async spin(user: JwtPayload) {
-    if (user.role !== 'STUDENT') {
-      throw new ForbiddenException('Chỉ học sinh được quay');
+    if (!canPlayGames(user.role)) {
+      throw new ForbiddenException('Tài khoản không được quay vòng quay');
     }
     const orgId = await this.resolveOrgId(user);
     const cfg = await this.ensureConfig(orgId);
@@ -250,8 +251,8 @@ export class WheelService {
   }
 
   async claimMission(user: JwtPayload, missionId: string) {
-    if (user.role !== 'STUDENT') {
-      throw new ForbiddenException('Chỉ học sinh nhận thưởng nhiệm vụ');
+    if (!canPlayGames(user.role)) {
+      throw new ForbiddenException('Tài khoản không nhận được nhiệm vụ vòng quay');
     }
     const orgId = await this.resolveOrgId(user);
     const cfg = await this.ensureConfig(orgId);

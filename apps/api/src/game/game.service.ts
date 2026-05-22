@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { TrashCategory } from '@prisma/client';
 import { JwtPayload } from '../common/decorators';
+import { canPlayGames } from '../common/teacher-scope';
 import { PrismaService } from '../prisma/prisma.service';
 import { WheelService } from '../wheel/wheel.service';
 
@@ -50,8 +51,8 @@ export class GameService {
   }
 
   async startSession(user: JwtPayload, durationSec = DEFAULT_DURATION) {
-    if (user.role !== 'STUDENT') {
-      throw new ForbiddenException('Chỉ học sinh mới được chơi');
+    if (!canPlayGames(user.role)) {
+      throw new ForbiddenException('Tài khoản không được chơi game này');
     }
     await this.assertPlayLimit(user.sub);
 

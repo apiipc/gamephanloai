@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
-import { useAuth } from '../context/AuthContext';
 import { playSound } from '../lib/sounds';
 
 const GAMES = [
@@ -35,21 +34,6 @@ const GAMES = [
 
 export default function PlayPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  if (user?.role !== 'STUDENT') {
-    return (
-      <div className="app-shell">
-        <div className="page">
-          <h2 style={{ marginBottom: 12 }}>🎮 Mini Game</h2>
-          <p style={{ color: 'var(--gray-500)' }}>
-            Tài khoản quản trị không chơi game. Vui lòng đăng nhập bằng tài khoản học sinh.
-          </p>
-        </div>
-        <BottomNav />
-      </div>
-    );
-  }
 
   return (
     <div className="app-shell">

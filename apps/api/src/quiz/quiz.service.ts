@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtPayload } from '../common/decorators';
+import { canPlayGames } from '../common/teacher-scope';
 import { PrismaService } from '../prisma/prisma.service';
 import { sanitizeQuizQuestion } from './quiz-text.util';
 
@@ -105,11 +106,11 @@ export class QuizService {
   }
 
   async startSession(user: JwtPayload) {
-    if (user.role !== Role.STUDENT) {
-      throw new ForbiddenException('Chỉ học sinh được chơi quiz');
+    if (!canPlayGames(user.role)) {
+      throw new ForbiddenException('Tài khoản không được chơi quiz');
     }
     if (!user.organizationId) {
-      throw new BadRequestException('Học sinh chưa được gán trường');
+      throw new BadRequestException('Tài khoản chưa được gán trường');
     }
 
     const cfg = await this.getConfigForOrg(user.organizationId);

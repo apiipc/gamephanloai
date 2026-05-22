@@ -10,6 +10,7 @@ import { TrashCatalog } from '../components/TrashCatalog';
 import { WheelAdminPanel } from '../components/WheelAdminPanel';
 import { UserAdminPanel } from '../components/UserAdminPanel';
 import { AdminOverviewPanel } from '../components/AdminOverviewPanel';
+import { TeacherClassesPanel } from '../components/TeacherClassesPanel';
 import type { PlayerScoreRow } from '../components/AdminOverviewPanel';
 
 interface Dashboard {
@@ -43,13 +44,15 @@ interface TrashRow {
 }
 
 export default function AdminPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, isTeacher } = useAuth();
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [trash, setTrash] = useState<TrashRow[]>([]);
   const [tab, setTab] = useState<'overview' | 'users' | 'trash' | 'quiz' | 'wheel'>('overview');
   const [resetUser, setResetUser] = useState<AdminUser | null>(null);
+  const [deleteUser, setDeleteUser] = useState<AdminUser | null>(null);
   const [resettingPw, setResettingPw] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
   const [msg, setMsg] = useState('');
   const [quizConfig, setQuizConfig] = useState<QuizConfig | null>(null);
@@ -158,8 +161,13 @@ export default function AdminPage() {
     <div className="admin-layout">
       <header className="admin-header">
         <div>
-          <h1 style={{ color: 'var(--green-700)' }}>⚙️ Quản trị</h1>
-          <p style={{ color: 'var(--gray-500)', fontSize: 14 }}>{user?.fullName}</p>
+          <h1 style={{ color: 'var(--green-700)' }}>
+            {isTeacher ? '👩‍🏫 Giám sát lớp' : '⚙️ Quản trị'}
+          </h1>
+          <p style={{ color: 'var(--gray-500)', fontSize: 14 }}>
+            {user?.fullName}
+            {isTeacher ? ' · Giáo viên' : ''}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Link to="/profile" className="btn btn-secondary">
@@ -204,6 +212,12 @@ export default function AdminPage() {
           </button>
         ))}
       </div>
+
+      {tab === 'overview' && isTeacher && (
+        <div style={{ marginBottom: 16 }}>
+          <TeacherClassesPanel />
+        </div>
+      )}
 
       {tab === 'overview' && dash && dash.games && dash.playerScores && (
         <AdminOverviewPanel
@@ -259,13 +273,22 @@ export default function AdminPage() {
                     {canCreateUser && (
                       <td>
                         {u.role === 'STUDENT' ? (
-                          <button
-                            type="button"
-                            className="btn btn-secondary wheel-admin__btn-sm"
-                            onClick={() => setResetUser(u)}
-                          >
-                            Reset MK
-                          </button>
+                          <div className="admin-overview__actions">
+                            <button
+                              type="button"
+                              className="btn btn-secondary wheel-admin__btn-sm"
+                              onClick={() => setResetUser(u)}
+                            >
+                              Reset MK
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary wheel-admin__btn-sm trash-catalog__btn--danger"
+                              onClick={() => setDeleteUser(u)}
+                            >
+                              Xóa
+                            </button>
+                          </div>
                         ) : (
                           '—'
                         )}
@@ -474,6 +497,61 @@ export default function AdminPage() {
 
       {tab === 'wheel' && canManageWheel && (
         <WheelAdminPanel onMessage={setMsg} />
+      )}
+
+      {deleteUser && (
+        <div
+          className="feedback-overlay"
+          style={{ position: 'fixed', zIndex: 200 }}
+          role="presentation"
+          onClick={() => !deletingUser && setDeleteUser(null)}
+        >
+          <div
+            className="card"
+            style={{ maxWidth: 400, width: '100%', margin: 16, zIndex: 201 }}
+            role="dialog"
+            onClick={(ev) => ev.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0, color: '#b91c1c' }}>Xóa học sinh?</h3>
+            <p style={{ fontSize: 14, color: 'var(--gray-700)' }}>
+              Xóa vĩnh viễn <strong>{deleteUser.fullName}</strong> ({deleteUser.email}).
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ background: '#b91c1c' }}
+                disabled={deletingUser}
+                onClick={async () => {
+                  setDeletingUser(true);
+                  try {
+                    const res = await adminApi.deleteUser(deleteUser.id);
+                    setMsg(
+                      `Đã xóa ${deleteUser.fullName}` +
+                        (res.classesRemoved ? ` (${res.classesRemoved} lớp trống đã gỡ)` : ''),
+                    );
+                    setDeleteUser(null);
+                    load();
+                  } catch (e) {
+                    setMsg(e instanceof Error ? e.message : 'Không xóa được');
+                  } finally {
+                    setDeletingUser(false);
+                  }
+                }}
+              >
+                {deletingUser ? 'Đang xóa…' : 'Xóa'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={deletingUser}
+                onClick={() => setDeleteUser(null)}
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {resetUser && (

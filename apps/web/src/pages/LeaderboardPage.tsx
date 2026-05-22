@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BottomNav } from '../components/BottomNav';
+import { TeacherClassesPanel } from '../components/TeacherClassesPanel';
 import { leaderboardApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import type { LeaderboardEntry, LeaderboardMode } from '../types';
@@ -57,17 +58,44 @@ function formatScore(mode: LeaderboardMode, score: number): string {
 }
 
 export default function LeaderboardPage() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isTeacher } = useAuth();
   const [raw, setRaw] = useState<LeaderboardEntry[]>([]);
-  const [mode, setMode] = useState<LeaderboardMode>('green');
+  const [mode, setMode] = useState<LeaderboardMode>('total');
   const [classRanks, setClassRanks] = useState<
     { rank: number; className: string; totalPoints: number; studentCount: number }[]
   >([]);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [selectedClassName, setSelectedClassName] = useState('');
+
+  const showClassPicker = isTeacher || user?.role === 'ORG_ADMIN' || user?.role === 'SUPER_ADMIN';
 
   useEffect(() => {
-    leaderboardApi.classBoard().then(setRaw).catch(() => {});
+    if (user?.role === 'STUDENT' && user.classId) {
+      setSelectedClassId(user.classId);
+      setSelectedClassName(user.class?.name ?? '');
+    }
+  }, [user?.classId, user?.class?.name, user?.role]);
+
+  useEffect(() => {
+    if (!selectedClassId && user?.role === 'STUDENT') {
+      setRaw([]);
+      return;
+    }
+    if (showClassPicker && !selectedClassId) {
+      setRaw([]);
+      return;
+    }
+
+    const classId = selectedClassId || undefined;
+    leaderboardApi
+      .classBoard(classId, mode)
+      .then(setRaw)
+      .catch(() => setRaw([]));
+  }, [selectedClassId, mode, showClassPicker, user?.role]);
+
+  useEffect(() => {
     if (isAdmin) {
-      leaderboardApi.classes().then(setClassRanks).catch(() => {});
+      leaderboardApi.classes().then(setClassRanks).catch(() => setClassRanks([]));
     }
   }, [isAdmin]);
 
@@ -78,10 +106,28 @@ export default function LeaderboardPage() {
       <div className="page">
         <h2 style={{ marginBottom: 8 }}>📊 Bảng xếp hạng</h2>
 
-        {user?.class && (
+        {isTeacher && (
+          <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 12 }}>
+            Giáo viên: chọn lớp để xem điểm từng học sinh.
+          </p>
+        )}
+
+        {user?.class && user.role === 'STUDENT' && (
           <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 12 }}>
             Lớp {user.class.name}
           </p>
+        )}
+
+        {showClassPicker && (
+          <div style={{ marginBottom: 16 }}>
+            <TeacherClassesPanel
+              selectedClassId={selectedClassId}
+              onSelectClass={(id, name) => {
+                setSelectedClassId(id);
+                setSelectedClassName(name);
+              }}
+            />
+          </div>
         )}
 
         <div className="leaderboard-tabs" role="tablist" aria-label="Loại điểm xếp hạng">
@@ -100,13 +146,28 @@ export default function LeaderboardPage() {
         </div>
 
         <p className="leaderboard-tabs__hint">
-          Chọn loại điểm để xếp hạng trong lớp. <strong>Tổng 3 trò</strong> = cộng điểm Phân loại +
-          Quiz + Vòng quay.
+          {selectedClassName ? (
+            <>
+              Xếp hạng lớp <strong>{selectedClassName}</strong>. <strong>Tổng 3 trò</strong> = Phân
+              loại + Quiz + Vòng quay.
+            </>
+          ) : showClassPicker ? (
+            'Chọn một lớp ở trên để xem bảng điểm học sinh.'
+          ) : (
+            <>
+              Chọn loại điểm để xếp hạng trong lớp. <strong>Tổng 3 trò</strong> = cộng điểm Phân loại
+              + Quiz + Vòng quay.
+            </>
+          )}
         </p>
 
         <div className="card" style={{ marginBottom: 20 }}>
           {board.length === 0 ? (
-            <p style={{ color: 'var(--gray-500)' }}>Chưa có dữ liệu</p>
+            <p style={{ color: 'var(--gray-500)' }}>
+              {showClassPicker && !selectedClassId
+                ? 'Chưa chọn lớp'
+                : 'Chưa có dữ liệu trong lớp này'}
+            </p>
           ) : (
             <div className="leaderboard-table-wrap">
               <table className="leaderboard-table">
@@ -152,7 +213,9 @@ export default function LeaderboardPage() {
 
         {isAdmin && classRanks.length > 0 && (
           <>
-            <h3 style={{ fontSize: 16, marginBottom: 12 }}>Xếp hạng lớp (trường)</h3>
+            <h3 style={{ fontSize: 16, marginBottom: 12 }}>
+              {isTeacher ? 'Tổng hợp các lớp (trường)' : 'Xếp hạng lớp (trường)'}
+            </h3>
             <div className="card leaderboard-class-table-wrap">
               <table className="leaderboard-table">
                 <thead>

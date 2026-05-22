@@ -46,7 +46,7 @@ export default function HomePage() {
           CHƠI GAME NHẬN ĐIỂM XANH
         </p>
 
-        {user?.role === 'STUDENT' && (
+        {(user?.role === 'STUDENT' || user?.role === 'TEACHER') && (
         <Link to="/wheel" className="card" style={{ display: 'block', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 40 }}>🎡</span>

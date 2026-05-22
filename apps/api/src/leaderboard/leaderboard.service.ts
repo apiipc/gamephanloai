@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { JwtPayload } from '../common/decorators';
+import { getTeacherManagedClassIds } from '../common/teacher-scope';
 import { PrismaService } from '../prisma/prisma.service';
 
 export type LeaderboardMode = 'green' | 'sort' | 'quiz' | 'wheel' | 'total';
@@ -49,8 +50,13 @@ export class LeaderboardService {
     }
 
     if (user.role === 'TEACHER') {
+      const classIds = await getTeacherManagedClassIds(this.prisma, user);
+      if (!classIds.includes(targetClassId)) throw new ForbiddenException();
+    }
+
+    if (user.role === 'ORG_ADMIN' && user.organizationId) {
       const cls = await this.prisma.class.findFirst({
-        where: { id: targetClassId, teacherId: user.sub },
+        where: { id: targetClassId, organizationId: user.organizationId },
       });
       if (!cls) throw new ForbiddenException();
     }
@@ -134,8 +140,20 @@ export class LeaderboardService {
     }
 
     const orgId = user.organizationId;
+    let classWhere: { organizationId?: string; id?: { in: string[] } } = orgId
+      ? { organizationId: orgId }
+      : {};
+
+    if (user.role === 'TEACHER') {
+      const classIds = await getTeacherManagedClassIds(this.prisma, user);
+      classWhere = {
+        ...(orgId ? { organizationId: orgId } : {}),
+        id: { in: classIds.length ? classIds : ['__none__'] },
+      };
+    }
+
     const classes = await this.prisma.class.findMany({
-      where: orgId ? { organizationId: orgId } : {},
+      where: classWhere,
       include: {
         students: {
           select: { greenPoints: true },

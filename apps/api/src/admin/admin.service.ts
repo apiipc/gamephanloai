@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { DEFAULT_USER_PASSWORD } from '../common/default-password';
 import { isValidEmail, normalizeEmail } from '../common/email';
 import { JwtPayload } from '../common/decorators';
+import { getTeacherManagedClassIds } from '../common/teacher-scope';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   deleteTrashItemImageFile,
@@ -44,8 +45,13 @@ export class AdminService {
       throw new BadRequestException('Chỉ có thể sửa hoặc xóa tài khoản học sinh');
     }
     if (actor.role === 'TEACHER') {
-      if (!target.classId) throw new ForbiddenException();
-      if (target.class?.teacherId !== actor.sub) throw new ForbiddenException();
+      if (!actor.organizationId || target.organizationId !== actor.organizationId) {
+        throw new ForbiddenException();
+      }
+      const classIds = await getTeacherManagedClassIds(this.prisma, actor);
+      if (!target.classId || !classIds.includes(target.classId)) {
+        throw new ForbiddenException('Học sinh không thuộc lớp bạn quản lý');
+      }
     } else if (actor.role === 'ORG_ADMIN') {
       if (!actor.organizationId || target.organizationId !== actor.organizationId) {
         throw new ForbiddenException();
@@ -75,21 +81,18 @@ export class AdminService {
 
   private async studentScope(user: JwtPayload) {
     if (user.role === 'TEACHER') {
-      const classes = await this.prisma.class.findMany({
-        where: { teacherId: user.sub },
-        select: { id: true },
-      });
-      const classIds = classes.map((c) => c.id);
+      const classIds = await getTeacherManagedClassIds(this.prisma, user);
+      const inClasses = classIds.length ? classIds : ['__none__'];
       return {
         studentWhere: {
           role: 'STUDENT' as Role,
-          classId: { in: classIds.length ? classIds : ['__none__'] },
+          classId: { in: inClasses },
         },
         userIds: (
           await this.prisma.user.findMany({
             where: {
               role: 'STUDENT',
-              classId: { in: classIds.length ? classIds : ['__none__'] },
+              classId: { in: inClasses },
             },
             select: { id: true },
           })
@@ -329,7 +332,19 @@ export class AdminService {
       students: { none: {} },
     };
     if (user.role === 'TEACHER') {
-      where.teacherId = user.sub;
+      const classIds = await getTeacherManagedClassIds(this.prisma, user);
+      const emptyClasses = await this.prisma.class.findMany({
+        where: {
+          organizationId: orgId,
+          students: { none: {} },
+          id: { in: classIds.length ? classIds : ['__none__'] },
+        },
+        select: { id: true },
+      });
+      for (const cls of emptyClasses) {
+        await this.prisma.class.delete({ where: { id: cls.id } });
+      }
+      return emptyClasses.length;
     }
 
     const emptyClasses = await this.prisma.class.findMany({
@@ -346,12 +361,15 @@ export class AdminService {
   async listClasses(user: JwtPayload) {
     await this.pruneEmptyClasses(user);
 
-    const scope =
-      user.role === 'SUPER_ADMIN'
-        ? {}
-        : user.role === 'TEACHER'
-          ? { teacherId: user.sub }
-          : { organizationId: user.organizationId! };
+    let scope: { id?: { in: string[] }; organizationId?: string } = {};
+    if (user.role === 'TEACHER') {
+      const classIds = await getTeacherManagedClassIds(this.prisma, user);
+      scope = { id: { in: classIds.length ? classIds : ['__none__'] } };
+    } else if (user.role === 'SUPER_ADMIN') {
+      scope = {};
+    } else {
+      scope = { organizationId: user.organizationId! };
+    }
 
     return this.prisma.class.findMany({
       where: {
@@ -368,12 +386,9 @@ export class AdminService {
 
   async listUsers(user: JwtPayload) {
     if (user.role === 'TEACHER') {
-      const classes = await this.prisma.class.findMany({
-        where: { teacherId: user.sub },
-        select: { id: true },
-      });
+      const classIds = await getTeacherManagedClassIds(this.prisma, user);
       return this.prisma.user.findMany({
-        where: { classId: { in: classes.map((c) => c.id) } },
+        where: { classId: { in: classIds.length ? classIds : ['__none__'] } },
         select: {
           id: true,
           email: true,
@@ -414,9 +429,10 @@ export class AdminService {
     const nameInput = className?.trim();
     if (nameInput) {
       if (user.role === 'TEACHER') {
+        const classIds = await getTeacherManagedClassIds(this.prisma, user);
         const found = await this.prisma.class.findFirst({
           where: {
-            teacherId: user.sub,
+            id: { in: classIds.length ? classIds : ['__none__'] },
             organizationId,
             name: { equals: nameInput, mode: 'insensitive' },
           },
@@ -823,14 +839,15 @@ export class AdminService {
         role: typeof Role.STUDENT;
         organizationId: string;
         email: { notIn: string[] };
-        class?: { teacherId: string };
+        classId?: { in: string[] };
       } = {
         role: Role.STUDENT,
         organizationId: orgId,
         email: { notIn: [...importedStudentEmails] },
       };
       if (user.role === 'TEACHER') {
-        staleWhere.class = { teacherId: user.sub };
+        const classIds = await getTeacherManagedClassIds(this.prisma, user);
+        staleWhere.classId = { in: classIds.length ? classIds : ['__none__'] };
       }
 
       const staleStudents = await this.prisma.user.findMany({

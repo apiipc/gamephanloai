@@ -2854,6 +2854,51 @@ th {
   align-items: center;
 }
 
+.teacher-classes__title {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.teacher-classes__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.teacher-classes__btn,
+.teacher-classes__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--gray-200);
+  background: #fff;
+  font-size: 14px;
+  text-align: left;
+}
+
+.teacher-classes__btn {
+  cursor: pointer;
+}
+
+.teacher-classes__btn--active {
+  border-color: var(--green-600);
+  background: var(--green-50);
+}
+
+.teacher-classes__btn span,
+.teacher-classes__item span {
+  font-size: 12px;
+  color: var(--gray-500);
+  font-weight: 600;
+}
+
 .leaderboard-tabs {
   display: flex;
   flex-wrap: wrap;
