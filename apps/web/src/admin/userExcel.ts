@@ -18,8 +18,8 @@ const TEMPLATE_HEADERS = [
 ] as const;
 
 const SAMPLE_ROWS: string[][] = [
-  ['Nguyễn Văn An', 'hs.moi@game.local', '123456', 'HS', '6A1'],
-  ['Cô Lan', 'gv.moi@game.local', '123456', 'GV', ''],
+  ['Nguyễn Văn An', 'hs.an@truong.edu.vn', '123456', 'HS', '12A1'],
+  ['Cô Lan', 'gv.lan@truong.edu.vn', '123456', 'GV', ''],
 ];
 
 function norm(s: unknown): string {

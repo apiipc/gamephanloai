@@ -142,7 +142,7 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
           </label>
           <label className="user-admin__field">
             <span>Email *</span>
-            <input name="email" type="email" required placeholder="hs@game.local" />
+            <input name="email" type="email" required placeholder="email@truong.edu.vn" />
           </label>
           <label className="user-admin__field">
             <span>Mật khẩu *</span>

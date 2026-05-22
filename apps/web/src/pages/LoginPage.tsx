@@ -7,8 +7,8 @@ import { startGameMusic } from '../lib/gameMusic';
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('hs1@game.local');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
@@ -76,17 +76,6 @@ export default function LoginPage() {
               </p>
             </div>
           )}
-        </div>
-        <div className="demo-accounts">
-          <strong>Tài khoản demo (mật khẩu: {DEFAULT_USER_PASSWORD})</strong>
-          <br />
-          Học sinh: hs1@game.local
-          <br />
-          Giáo viên: teacher@game.local
-          <br />
-          Quản trị trường: school@game.local
-          <br />
-          Super Admin: admin@game.local
         </div>
       </div>
     </div>

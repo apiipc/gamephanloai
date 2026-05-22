@@ -1969,16 +1969,6 @@ th {
   margin-bottom: 12px;
 }
 
-.demo-accounts {
-  margin-top: 20px;
-  padding: 12px;
-  background: var(--gray-50);
-  border-radius: 12px;
-  font-size: 12px;
-  color: var(--gray-500);
-  line-height: 1.6;
-}
-
 /* —— Vòng Quay Xanh —— */
 .wheel-shell .page {
   padding-bottom: 32px;

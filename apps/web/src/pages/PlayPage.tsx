@@ -43,7 +43,7 @@ export default function PlayPage() {
         <div className="page">
           <h2 style={{ marginBottom: 12 }}>🎮 Mini Game</h2>
           <p style={{ color: 'var(--gray-500)' }}>
-            Tài khoản quản trị không chơi game. Đăng nhập học sinh (hs1@game.local) để chơi thử.
+            Tài khoản quản trị không chơi game. Vui lòng đăng nhập bằng tài khoản học sinh.
           </p>
         </div>
         <BottomNav />
