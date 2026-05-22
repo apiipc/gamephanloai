@@ -32,7 +32,7 @@ export class AdminService {
     }
   }
 
-  private assertCanManageStudent(
+  private async assertCanManageStudent(
     actor: JwtPayload,
     target: {
       role: Role;
@@ -584,7 +584,7 @@ export class AdminService {
       include: { class: { select: { teacherId: true } } },
     });
     if (!target) throw new NotFoundException();
-    this.assertCanManageStudent(user, target);
+    await this.assertCanManageStudent(user, target);
 
     const wantsClassChange =
       (dto.className !== undefined && dto.className.trim() !== '') ||
@@ -645,7 +645,7 @@ export class AdminService {
       include: { class: { select: { teacherId: true } } },
     });
     if (!target) throw new NotFoundException();
-    this.assertCanManageStudent(user, target);
+    await this.assertCanManageStudent(user, target);
 
     await this.prisma.user.update({
       where: { id },
@@ -667,7 +667,7 @@ export class AdminService {
       include: { class: { select: { teacherId: true } } },
     });
     if (!target) throw new NotFoundException();
-    this.assertCanManageStudent(user, target);
+    await this.assertCanManageStudent(user, target);
 
     const quizOwned = await this.prisma.quizQuestion.count({
       where: { createdById: id },
