@@ -28,6 +28,7 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
   const [uploading, setUploading] = useState(false);
   const [excelError, setExcelError] = useState('');
   const [formRole, setFormRole] = useState<Role>('STUDENT');
+  const [formError, setFormError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -45,25 +46,52 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
 
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setFormError('');
     const fd = new FormData(e.currentTarget);
+    const fullName = String(fd.get('fullName') ?? '').trim();
+    const email = String(fd.get('email') ?? '').trim().toLowerCase();
+    const password = String(fd.get('password') ?? '');
+    const className = String(fd.get('className') ?? '').trim();
+
+    if (!fullName) {
+      setFormError('Vui lòng nhập họ tên');
+      return;
+    }
+    if (!email || !email.includes('@')) {
+      setFormError('Email không hợp lệ');
+      return;
+    }
+    if (password.length < 6) {
+      setFormError('Mật khẩu tối thiểu 6 ký tự');
+      return;
+    }
+    if (formRole === 'STUDENT' && !className) {
+      setFormError('Học sinh cần nhập lớp (VD: 12A2)');
+      return;
+    }
+
     setSaving(true);
     try {
-      const role = fd.get('role') as Role;
       await adminApi.createUser({
-        fullName: String(fd.get('fullName')).trim(),
-        email: String(fd.get('email')).trim().toLowerCase(),
-        password: String(fd.get('password')),
-        role,
-        ...(role === 'STUDENT'
-          ? { className: String(fd.get('className') || '').trim() }
-          : {}),
+        fullName,
+        email,
+        password,
+        role: formRole,
+        ...(formRole === 'STUDENT' ? { className } : {}),
       });
       e.currentTarget.reset();
       setFormRole('STUDENT');
-      onMessage('Đã tạo tài khoản');
+      setFormError('');
+      onMessage(`Đã tạo tài khoản ${email}`);
       onChanged();
+      adminApi
+        .classes()
+        .then((list) => setClasses(list as AdminClass[]))
+        .catch(() => setClasses([]));
     } catch (err) {
-      onMessage(err instanceof Error ? err.message : 'Không tạo được');
+      const text = err instanceof Error ? err.message : 'Không tạo được';
+      setFormError(text);
+      onMessage(text);
     } finally {
       setSaving(false);
     }
@@ -149,6 +177,11 @@ export function UserAdminPanel({ users, actorRole, onMessage, onChanged }: UserA
                 ))}
               </datalist>
             </label>
+          )}
+          {formError && (
+            <p className="quiz-excel-upload__error" role="alert">
+              {formError}
+            </p>
           )}
           <button type="submit" className="btn btn-primary" disabled={saving}>
             {saving ? 'Đang tạo…' : 'Tạo tài khoản'}

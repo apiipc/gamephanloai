@@ -10,6 +10,7 @@ import { TrashCatalog } from '../components/TrashCatalog';
 import { WheelAdminPanel } from '../components/WheelAdminPanel';
 import { UserAdminPanel } from '../components/UserAdminPanel';
 import { AdminOverviewPanel } from '../components/AdminOverviewPanel';
+import { AudioSettingsCard } from '../components/AudioSettingsCard';
 import type { PlayerScoreRow } from '../components/AdminOverviewPanel';
 
 interface Dashboard {
@@ -157,7 +158,10 @@ export default function AdminPage() {
           <h1 style={{ color: 'var(--green-700)' }}>⚙️ Quản trị</h1>
           <p style={{ color: 'var(--gray-500)', fontSize: 14 }}>{user?.fullName}</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Link to="/profile" className="btn btn-secondary">
+            👤 Hồ sơ
+          </Link>
           <Link to="/" className="btn btn-secondary">
             App
           </Link>
@@ -166,6 +170,10 @@ export default function AdminPage() {
           </button>
         </div>
       </header>
+
+      <div style={{ marginBottom: 20 }}>
+        <AudioSettingsCard />
+      </div>
 
       {msg && (
         <p style={{ background: 'var(--green-50)', padding: 12, borderRadius: 8, marginBottom: 16 }}>

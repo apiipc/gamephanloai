@@ -52,7 +52,10 @@ class UpdateUserDto {
 }
 
 class CreateUserDto {
-  @IsEmail()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
+  @IsEmail({}, { allow_utf8_local_part: true })
   email!: string;
 
   @IsString()

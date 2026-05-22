@@ -22,15 +22,14 @@ export function BottomNav() {
         <span>📊</span>
         <span>Xếp hạng</span>
       </NavLink>
-      {isAdmin ? (
+      <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+        <span>👤</span>
+        <span>Hồ sơ</span>
+      </NavLink>
+      {isAdmin && (
         <NavLink to="/admin" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <span>⚙️</span>
           <span>Quản trị</span>
-        </NavLink>
-      ) : (
-        <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <span>👤</span>
-          <span>Hồ sơ</span>
         </NavLink>
       )}
     </nav>

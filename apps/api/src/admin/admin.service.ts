@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Role, TrashCategory } from '@prisma/client';
+import { Prisma, Role, TrashCategory } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { JwtPayload } from '../common/decorators';
 import { PrismaService } from '../prisma/prisma.service';
@@ -397,6 +397,24 @@ export class AdminService {
     return classId;
   }
 
+  private async resolveOrgId(
+    user: JwtPayload,
+    organizationId?: string | null,
+  ): Promise<string> {
+    let orgId = organizationId || user.organizationId;
+    if (!orgId && user.role === 'SUPER_ADMIN') {
+      const org = await this.prisma.organization.findFirst({
+        orderBy: { createdAt: 'asc' },
+      });
+      orgId = org?.id ?? null;
+    }
+    if (!orgId) {
+      throw new ForbiddenException('Thiếu tổ chức — đăng nhập tài khoản quản trị trường');
+    }
+    this.assertOrgAccess(user, orgId);
+    return orgId;
+  }
+
   async createUser(
     user: JwtPayload,
     data: {
@@ -409,11 +427,7 @@ export class AdminService {
       organizationId?: string;
     },
   ) {
-    const orgId = data.organizationId || user.organizationId;
-    if (!orgId && data.role !== 'SUPER_ADMIN') {
-      throw new ForbiddenException('Thiếu organization');
-    }
-    if (orgId) this.assertOrgAccess(user, orgId);
+    const email = data.email.trim().toLowerCase();
 
     if (user.role === 'TEACHER' && data.role !== 'STUDENT') {
       throw new ForbiddenException();
@@ -422,30 +436,48 @@ export class AdminService {
       throw new ForbiddenException();
     }
 
+    let orgId: string | null = null;
+    if (data.role !== 'SUPER_ADMIN') {
+      orgId = await this.resolveOrgId(user, data.organizationId);
+    }
+
     let resolvedClassId: string | undefined;
     if (data.role === 'STUDENT') {
-      if (!orgId) {
-        throw new ForbiddenException('Thiếu organization cho học sinh');
-      }
       resolvedClassId = await this.resolveClassForNewStudent(
         user,
-        orgId,
+        orgId!,
         data.classId,
         data.className,
       );
     }
 
-    const created = await this.prisma.user.create({
-      data: {
-        email: data.email,
-        passwordHash: await bcrypt.hash(data.password, 10),
-        fullName: data.fullName,
-        role: data.role,
-        organizationId: orgId,
-        classId: resolvedClassId,
-      },
-    });
-    await this.log(user, 'CREATE_USER', created.id, { email: data.email });
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new BadRequestException('Email đã được sử dụng');
+    }
+
+    let created;
+    try {
+      created = await this.prisma.user.create({
+        data: {
+          email,
+          passwordHash: await bcrypt.hash(data.password, 10),
+          fullName: data.fullName.trim(),
+          role: data.role,
+          organizationId: orgId,
+          classId: resolvedClassId,
+        },
+      });
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        throw new BadRequestException('Email đã được sử dụng');
+      }
+      throw e;
+    }
+    await this.log(user, 'CREATE_USER', created.id, { email });
     const { passwordHash: _, ...safe } = created;
     return safe;
   }

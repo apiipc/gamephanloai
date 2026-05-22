@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
-import { AudioVolumeControls } from '../components/AudioVolumeControls';
-import { SoundToggle } from '../components/SoundToggle';
+import { AudioSettingsCard } from '../components/AudioSettingsCard';
 import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
@@ -45,13 +44,7 @@ export default function ProfilePage() {
             ⭐ {user?.greenPoints ?? 0}
           </p>
         </div>
-        <div className="card audio-settings-card">
-          <div className="audio-settings-card__head">
-            <h3 className="audio-settings-card__title">🔊 Cài đặt âm thanh</h3>
-            <SoundToggle showLabel />
-          </div>
-          <AudioVolumeControls showMusicPreview />
-        </div>
+        <AudioSettingsCard />
         <Link
           to="/sounds"
           className="btn btn-secondary"
